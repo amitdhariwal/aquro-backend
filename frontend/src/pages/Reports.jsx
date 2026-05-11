@@ -64,10 +64,10 @@ export default function Reports() {
     try {
       // 1. Fetch Data
       const [dispRes, expRes, invHistRes, prodRes] = await Promise.all([
-        fetch('http://localhost:5000/api/dispatches'),
-        fetch('http://localhost:5000/api/expenses'),
-        fetch('http://localhost:5000/api/inventory/history'),
-        fetch('http://localhost:5000/api/production')
+        fetch('https://aquro-backend-api.onrender.com/api/dispatches'),
+        fetch('https://aquro-backend-api.onrender.com/api/expenses'),
+        fetch('https://aquro-backend-api.onrender.com/api/inventory/history'),
+        fetch('https://aquro-backend-api.onrender.com/api/production')
       ]);
 
       const dispatches = dispRes.ok ? await dispRes.json() : [];

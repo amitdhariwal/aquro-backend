@@ -27,7 +27,7 @@ export default function Dispatch() {
 
   const fetchDispatches = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/dispatches');
+      const res = await fetch('https://aquro-backend-api.onrender.com/api/dispatches');
       if (res.ok) {
         const data = await res.json();
         setDispatches(data.map(d => ({ ...d, id: d._id })));
@@ -39,7 +39,7 @@ export default function Dispatch() {
 
   const fetchCustomers = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/customers');
+      const res = await fetch('https://aquro-backend-api.onrender.com/api/customers');
       if (res.ok) {
         const data = await res.json();
         setCustomers(data.map(c => ({ id: c._id, name: c.businessName })));
@@ -90,7 +90,7 @@ export default function Dispatch() {
 
     try {
       const isEdit = !!formData.id;
-      const url = isEdit ? `http://localhost:5000/api/dispatches/${formData.id}` : 'http://localhost:5000/api/dispatches';
+      const url = isEdit ? `https://aquro-backend-api.onrender.com/api/dispatches/${formData.id}` : 'https://aquro-backend-api.onrender.com/api/dispatches';
       const method = isEdit ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -111,7 +111,7 @@ export default function Dispatch() {
   const handleDelete = async (id, challan) => {
     if (window.confirm(`Are you sure you want to delete challan ${challan}?`)) {
       try {
-        const res = await fetch(`http://localhost:5000/api/dispatches/${id}`, { method: 'DELETE' });
+        const res = await fetch(`https://aquro-backend-api.onrender.com/api/dispatches/${id}`, { method: 'DELETE' });
         if (res.ok) {
           fetchDispatches();
         }

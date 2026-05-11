@@ -10,7 +10,7 @@ export default function ReadyStock() {
       let produced = { '200ml': 0, '500ml': 0, '1L': 0, '2L': 0 };
       let dispatched = { '200ml': 0, '500ml': 0, '1L': 0, '2L': 0 };
 
-      const resProd = await fetch('http://localhost:5000/api/production');
+      const resProd = await fetch('https://aquro-backend-api.onrender.com/api/production');
       if (resProd.ok) {
         const parsed = await resProd.json();
         parsed.forEach(p => {
@@ -18,7 +18,7 @@ export default function ReadyStock() {
         });
       }
 
-      const resDisp = await fetch('http://localhost:5000/api/dispatches');
+      const resDisp = await fetch('https://aquro-backend-api.onrender.com/api/dispatches');
       if (resDisp.ok) {
         const dispatches = await resDisp.json();
         dispatches.forEach(d => {
