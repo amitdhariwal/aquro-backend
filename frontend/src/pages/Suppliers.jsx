@@ -31,7 +31,7 @@ export default function Suppliers() {
 
   const fetchSuppliers = async () => {
     try {
-      const response = await fetch('https://aquro-backend-api.onrender.com/api/suppliers');
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/suppliers');
       if (response.ok) {
         const data = await response.json();
         const formattedData = data.map(item => ({ ...item, id: item._id }));
@@ -47,7 +47,7 @@ export default function Suppliers() {
     
     // Load purchases from inventory history
     try {
-      const resInv = await fetch('https://aquro-backend-api.onrender.com/api/inventory/history');
+      const resInv = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory/history');
       if (resInv.ok) {
         const allHistory = await resInv.json();
         const filtered = allHistory.filter(h => h.supplier && h.supplier.toLowerCase() === supplier.businessName.toLowerCase());
@@ -68,7 +68,7 @@ export default function Suppliers() {
 
   const fetchSupplierPayments = async (supplierId) => {
     try {
-      const resPay = await fetch(`https://aquro-backend-api.onrender.com/api/suppliers/${supplierId}/payments`);
+      const resPay = await fetch(`/api/suppliers/${supplierId}/payments`);
       if (resPay.ok) {
         const allPayments = await resPay.json();
         setSupplierPayments(allPayments);
@@ -91,7 +91,7 @@ export default function Suppliers() {
     };
 
     try {
-      const response = await fetch(`https://aquro-backend-api.onrender.com/api/suppliers/${selectedSupplier.id}/payments`, {
+      const response = await fetch(`/api/suppliers/${selectedSupplier.id}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry)
@@ -215,8 +215,8 @@ export default function Suppliers() {
     
     try {
       const url = isEdit 
-        ? `https://aquro-backend-api.onrender.com/api/suppliers/${formData.id}` 
-        : 'https://aquro-backend-api.onrender.com/api/suppliers';
+        ? `/api/suppliers/${formData.id}` 
+        : (import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/suppliers';
       const method = isEdit ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -242,7 +242,7 @@ export default function Suppliers() {
   const handleDelete = async (id) => {
     if(window.confirm('Are you sure you want to delete this supplier?')) {
       try {
-        const response = await fetch(`https://aquro-backend-api.onrender.com/api/suppliers/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/suppliers/${id}`, { method: 'DELETE' });
         if (response.ok) {
           fetchSuppliers();
         }

@@ -37,7 +37,7 @@ export default function Customers() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('https://aquro-backend-api.onrender.com/api/customers');
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers');
       if (response.ok) {
         const data = await response.json();
         const formattedData = data.map(item => ({ ...item, id: item._id }));
@@ -53,7 +53,7 @@ export default function Customers() {
     
     // Load deliveries
     try {
-      const resDisp = await fetch('https://aquro-backend-api.onrender.com/api/dispatches');
+      const resDisp = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/dispatches');
       if (resDisp.ok) {
         const allDispatches = await resDisp.json();
         const filtered = allDispatches.filter(d => d.customer === customer.businessName);
@@ -74,7 +74,7 @@ export default function Customers() {
 
   const fetchCustomerPayments = async (customerId) => {
     try {
-      const resPay = await fetch(`https://aquro-backend-api.onrender.com/api/customers/${customerId}/payments`);
+      const resPay = await fetch(`/api/customers/${customerId}/payments`);
       if (resPay.ok) {
         const allPayments = await resPay.json();
         setCustomerPayments(allPayments);
@@ -97,7 +97,7 @@ export default function Customers() {
     };
 
     try {
-      const response = await fetch(`https://aquro-backend-api.onrender.com/api/customers/${selectedCustomer.id}/payments`, {
+      const response = await fetch(`/api/customers/${selectedCustomer.id}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry)
@@ -261,8 +261,8 @@ export default function Customers() {
     
     try {
       const url = isEdit 
-        ? `https://aquro-backend-api.onrender.com/api/customers/${formData.id}` 
-        : 'https://aquro-backend-api.onrender.com/api/customers';
+        ? `/api/customers/${formData.id}` 
+        : (import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers';
       const method = isEdit ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -287,7 +287,7 @@ export default function Customers() {
   const handleDelete = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete ${name}?`)) {
       try {
-        const response = await fetch(`https://aquro-backend-api.onrender.com/api/customers/${id}`, {
+        const response = await fetch(`/api/customers/${id}`, {
           method: 'DELETE'
         });
         if (response.ok) {

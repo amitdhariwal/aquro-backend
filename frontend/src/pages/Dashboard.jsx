@@ -37,7 +37,7 @@ export default function Dashboard() {
       let prodData = [];
       let dispData = [];
 
-      const resProd = await fetch('https://aquro-backend-api.onrender.com/api/production');
+      const resProd = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/production');
       if (resProd.ok) {
         prodData = await resProd.json();
         const total = prodData.reduce((sum, item) => sum + Number(item.qty), 0);
@@ -60,7 +60,7 @@ export default function Dashboard() {
         ]);
       }
 
-      const resDisp = await fetch('https://aquro-backend-api.onrender.com/api/dispatches');
+      const resDisp = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/dispatches');
       if (resDisp.ok) {
         dispData = await resDisp.json();
         const pendingCount = dispData.filter(d => d.status === 'Pending' || d.status === 'In Transit').length;

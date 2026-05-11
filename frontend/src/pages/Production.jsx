@@ -20,19 +20,19 @@ export default function Production() {
 
   const fetchProductions = async () => {
     try {
-      const resProd = await fetch('https://aquro-backend-api.onrender.com/api/production');
+      const resProd = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/production');
       if (resProd.ok) {
         const data = await resProd.json();
         setProductions(data.map(d => ({ ...d, id: d._id })));
       }
 
-      const resCust = await fetch('https://aquro-backend-api.onrender.com/api/customers');
+      const resCust = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers');
       if (resCust.ok) {
         const data = await resCust.json();
         setCustomers(data.map(c => ({ id: c._id, name: c.businessName })));
       }
 
-      const resHist = await fetch('https://aquro-backend-api.onrender.com/api/production/history');
+      const resHist = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/production/history');
       if (resHist.ok) {
         const data = await resHist.json();
         setHistoryLogs(data.map(d => ({ ...d, id: d._id })));
@@ -48,7 +48,7 @@ export default function Production() {
         timestamp: new Date().toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }),
         type, batch, details, payload, operator: 'Admin User'
       };
-      await fetch('https://aquro-backend-api.onrender.com/api/production/history', {
+      await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/production/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newLog)
@@ -67,7 +67,7 @@ export default function Production() {
     // Validate Stock for New Entry
     if (!formData.id) {
       try {
-        const invRes = await fetch('https://aquro-backend-api.onrender.com/api/inventory');
+        const invRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory');
         if (invRes.ok) {
           const inventory = await invRes.json();
           const reqBottle = inventory.find(i => i.customId === `inv-${formData.size}`);
@@ -118,14 +118,14 @@ export default function Production() {
     try {
       if (formData.id) {
         const oldEntry = productions.find(p => p.id === formData.id);
-        await fetch(`https://aquro-backend-api.onrender.com/api/production/${formData.id}`, {
+        await fetch(`/api/production/${formData.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(entryData)
         });
         await addHistoryLog('UPDATE', formData.batch, `Updated size to ${entryData.size}, qty to ${entryData.qty}`, oldEntry);
       } else {
-        await fetch('https://aquro-backend-api.onrender.com/api/production', {
+        await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/production', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(entryData)
@@ -133,7 +133,7 @@ export default function Production() {
         await addHistoryLog('CREATE', formData.batch, `Created new batch ${formData.batch}`);
         
         // Deduct from Inventory
-        const invRes = await fetch('https://aquro-backend-api.onrender.com/api/inventory');
+        const invRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory');
         if (invRes.ok) {
           const inventory = await invRes.json();
           for (let item of inventory) {
@@ -156,7 +156,7 @@ export default function Production() {
             }
 
             if (shouldUpdate) {
-              await fetch(`https://aquro-backend-api.onrender.com/api/inventory/${item._id}`, {
+              await fetch(`/api/inventory/${item._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ current: newCurrent })
@@ -205,7 +205,7 @@ export default function Production() {
     if (window.confirm(`Are you sure you want to delete batch ${batch}?`)) {
       try {
         const toDelete = productions.find(p => p.id === id);
-        await fetch(`https://aquro-backend-api.onrender.com/api/production/${id}`, { method: 'DELETE' });
+        await fetch(`/api/production/${id}`, { method: 'DELETE' });
         await addHistoryLog('DELETE', batch, `Deleted batch ${batch}`, toDelete);
         await fetchProductions();
       } catch (error) {

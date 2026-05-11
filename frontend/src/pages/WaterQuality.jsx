@@ -81,7 +81,7 @@ export default function WaterQuality() {
 
   const fetchRecords = async () => {
     try {
-      const res = await fetch('https://aquro-backend-api.onrender.com/api/water-quality');
+      const res = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/water-quality');
       if (res.ok) {
         const data = await res.json();
         setRecords(data.map(d => ({ ...d, id: d._id })));
@@ -105,7 +105,7 @@ export default function WaterQuality() {
       return;
     }
     try {
-      const res = await fetch('https://aquro-backend-api.onrender.com/api/water-quality', {
+      const res = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/water-quality', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
@@ -124,7 +124,7 @@ export default function WaterQuality() {
   const handleDelete = async (id) => {
     if (window.confirm('Kya aap is record ko delete karna chahte hain?')) {
       try {
-        const res = await fetch(`https://aquro-backend-api.onrender.com/api/water-quality/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/water-quality/${id}`, { method: 'DELETE' });
         if (res.ok) {
           fetchRecords();
         }

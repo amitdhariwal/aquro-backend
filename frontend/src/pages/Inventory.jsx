@@ -13,7 +13,7 @@ export default function Inventory() {
 
   const loadInventory = async () => {
     try {
-      const resInv = await fetch('https://aquro-backend-api.onrender.com/api/inventory');
+      const resInv = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory');
       if (resInv.ok) {
         const data = await resInv.json();
         // The DB might not have the default initial items if it's new. We should create them if empty.
@@ -31,13 +31,13 @@ export default function Inventory() {
           });
           
           for (let item of initial) {
-            await fetch('https://aquro-backend-api.onrender.com/api/inventory', {
+            await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(item)
             });
           }
-          const resInv2 = await fetch('https://aquro-backend-api.onrender.com/api/inventory');
+          const resInv2 = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory');
           const data2 = await resInv2.json();
           setStockItems(data2.map(d => ({ ...d, id: d.customId })));
         } else {
@@ -45,12 +45,12 @@ export default function Inventory() {
         }
       }
 
-      const resHist = await fetch('https://aquro-backend-api.onrender.com/api/inventory/history');
+      const resHist = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory/history');
       if (resHist.ok) {
         setHistory(await resHist.json());
       }
 
-      const resSupp = await fetch('https://aquro-backend-api.onrender.com/api/suppliers');
+      const resSupp = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/suppliers');
       if (resSupp.ok) {
         setSuppliersList(await resSupp.json());
       }
@@ -73,7 +73,7 @@ export default function Inventory() {
       if (formData.isEdit) {
         const itemToUpdate = stockItems.find(i => i.id === formData.id);
         if (itemToUpdate) {
-          await fetch(`https://aquro-backend-api.onrender.com/api/inventory/${itemToUpdate._id}`, {
+          await fetch(`/api/inventory/${itemToUpdate._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: formData.name, current: qtyNum, minimum: parseInt(formData.minimum) || 0 })
@@ -81,13 +81,13 @@ export default function Inventory() {
         }
       } else if (formData.isNew) {
         const newId = `inv-${Date.now()}`;
-        const newItemRes = await fetch('https://aquro-backend-api.onrender.com/api/inventory', {
+        const newItemRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ customId: newId, name: formData.name, current: qtyNum, minimum: parseInt(formData.minimum) || 500, unit: 'pcs' })
         });
         
-        await fetch('https://aquro-backend-api.onrender.com/api/inventory/history', {
+        await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory/history', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -100,13 +100,13 @@ export default function Inventory() {
         const itemToUpdate = stockItems.find(i => i.id === formData.id);
         if (itemToUpdate) {
           const newCurrent = itemToUpdate.current + qtyNum;
-          await fetch(`https://aquro-backend-api.onrender.com/api/inventory/${itemToUpdate._id}`, {
+          await fetch(`/api/inventory/${itemToUpdate._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ current: newCurrent })
           });
           
-          await fetch('https://aquro-backend-api.onrender.com/api/inventory/history', {
+          await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory/history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
