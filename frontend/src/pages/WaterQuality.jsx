@@ -1,0 +1,542 @@
+import React, { useState, useEffect } from 'react';
+import {
+  TestTube,
+  Plus,
+  X,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  FlaskConical,
+  Droplets,
+  Thermometer,
+  FileText,
+  Calendar,
+  ChevronDown,
+  Trash2,
+  ClipboardList,
+  ShieldCheck,
+  Activity,
+  Download,
+} from 'lucide-react';
+
+
+// ─── Water Quality Parameters (NABL Standard) ────────────────────────────────
+const PARAMETERS = [
+  { key: 'ph', label: 'pH Value', unit: '', min: 6.5, max: 8.5, icon: '⚗️' },
+  { key: 'tds', label: 'TDS', unit: 'mg/L', min: 0, max: 500, icon: '💧' },
+  { key: 'turbidity', label: 'Turbidity', unit: 'NTU', min: 0, max: 1, icon: '🌫️' },
+  { key: 'hardness', label: 'Total Hardness', unit: 'mg/L', min: 0, max: 200, icon: '🪨' },
+  { key: 'chloride', label: 'Chloride', unit: 'mg/L', min: 0, max: 250, icon: '🧪' },
+  { key: 'nitrate', label: 'Nitrate', unit: 'mg/L', min: 0, max: 45, icon: '🌿' },
+  { key: 'iron', label: 'Iron', unit: 'mg/L', min: 0, max: 0.3, icon: '🔩' },
+  { key: 'fluoride', label: 'Fluoride', unit: 'mg/L', min: 0, max: 1.0, icon: '⚡' },
+  { key: 'alkalinity', label: 'Alkalinity', unit: 'mg/L', min: 0, max: 200, icon: '🧬' },
+  { key: 'coliform', label: 'Coliform (MPN/100ml)', unit: 'MPN/100ml', min: 0, max: 0, icon: '🦠' },
+];
+
+function getParamStatus(key, value) {
+  const p = PARAMETERS.find((x) => x.key === key);
+  if (!p || value === '' || value === null || value === undefined) return 'unknown';
+  const v = parseFloat(value);
+  if (isNaN(v)) return 'unknown';
+  if (key === 'coliform') return v === 0 ? 'pass' : 'fail';
+  if (v >= p.min && v <= p.max) return 'pass';
+  if (v < p.min * 0.9 || v > p.max * 1.1) return 'fail';
+  return 'warning';
+}
+
+function getOverallStatus(record) {
+  const statuses = PARAMETERS.map((p) => getParamStatus(p.key, record[p.key]));
+  if (statuses.some((s) => s === 'fail')) return 'fail';
+  if (statuses.some((s) => s === 'warning')) return 'warning';
+  if (statuses.every((s) => s === 'pass')) return 'pass';
+  return 'pending';
+}
+
+const STATUS_CONFIG = {
+  pass: { label: 'Passed', color: 'text-emerald-600', bg: 'bg-emerald-100', border: 'border-emerald-200', icon: CheckCircle },
+  fail: { label: 'Failed', color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-200', icon: XCircle },
+  warning: { label: 'Warning', color: 'text-amber-600', bg: 'bg-amber-100', border: 'border-amber-200', icon: AlertTriangle },
+  pending: { label: 'Pending', color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-200', icon: ClipboardList },
+  unknown: { label: '—', color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-100', icon: ClipboardList },
+};
+
+// ─── Empty form ────────────────────────────────────────────────────────────────
+const emptyForm = () => ({
+  date: new Date().toISOString().split('T')[0],
+  sampleId: '',
+  source: 'RO Plant Output',
+  testedBy: '',
+  ...Object.fromEntries(PARAMETERS.map((p) => [p.key, ''])),
+  remarks: '',
+});
+
+// ─── Main Component ────────────────────────────────────────────────────────────
+export default function WaterQuality() {
+  const [records, setRecords] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState(emptyForm());
+  const [expandedId, setExpandedId] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  const fetchRecords = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/water-quality');
+      if (res.ok) {
+        const data = await res.json();
+        setRecords(data.map(d => ({ ...d, id: d._id })));
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecords();
+  }, []);
+
+  const handleChange = (e) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  };
+
+  const handleAdd = async () => {
+    if (!form.sampleId.trim() || !form.date || !form.testedBy.trim()) {
+      alert('Sample ID, Date aur Tested By fields zaruri hain.');
+      return;
+    }
+    try {
+      const res = await fetch('http://localhost:5000/api/water-quality', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      if (res.ok) {
+        fetchRecords();
+        setShowModal(false);
+        setForm(emptyForm());
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Backend connection error');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Kya aap is record ko delete karna chahte hain?')) {
+      try {
+        const res = await fetch(`http://localhost:5000/api/water-quality/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          fetchRecords();
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  const handleDownloadPDF = (record) => {
+    const overall = getOverallStatus(record);
+    const overallCfg = STATUS_CONFIG[overall] || STATUS_CONFIG['pending'];
+    const statusColors = { pass: '#10b981', fail: '#ef4444', warning: '#f59e0b', pending: '#94a3b8', unknown: '#94a3b8' };
+
+    const rowsHtml = PARAMETERS.map(p => {
+      const val = record[p.key];
+      const status = getParamStatus(p.key, val);
+      const color = statusColors[status] || '#94a3b8';
+      const displayVal = (val !== '' && val !== null && val !== undefined) ? `${val}${p.unit ? ' ' + p.unit : ''}` : '—';
+      const limit = p.key === 'coliform' ? `0 ${p.unit}` : `${p.min} – ${p.max}${p.unit ? ' ' + p.unit : ''}`;
+      return `
+        <tr>
+          <td>${p.label}</td>
+          <td style="text-align:center;">${displayVal}</td>
+          <td style="text-align:center;">${limit}</td>
+          <td style="text-align:center;color:${color};font-weight:700;">${status.toUpperCase()}</td>
+        </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <title>Water Quality Report - ${record.sampleId}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color:#1e293b; background:#fff; padding:32px; }
+    .header { text-align:center; margin-bottom:24px; }
+    .header h1 { font-size:26px; color:#0ea5e9; font-weight:800; letter-spacing:1px; }
+    .header p { font-size:12px; color:#64748b; margin-top:4px; }
+    .divider { height:3px; background:linear-gradient(to right,#0ea5e9,#38bdf8); border-radius:2px; margin:18px 0; }
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 32px; margin-bottom:20px; }
+    .info-item label { font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; }
+    .info-item p { font-size:13px; font-weight:600; color:#1e293b; margin-top:2px; }
+    .badge { display:inline-block; padding:3px 12px; border-radius:999px; font-size:12px; font-weight:700; color:#fff; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:12px; }
+    thead tr { background:#0ea5e9; color:#fff; }
+    thead th { padding:9px 12px; text-align:left; font-weight:700; }
+    tbody tr:nth-child(even) { background:#f8fafc; }
+    tbody td { padding:8px 12px; border-bottom:1px solid #e2e8f0; }
+    .remarks { margin-top:20px; padding:12px 16px; background:#f1f5f9; border-left:4px solid #0ea5e9; border-radius:6px; font-size:12px; color:#475569; }
+    .remarks strong { color:#1e293b; display:block; margin-bottom:4px; }
+    .footer { margin-top:32px; text-align:center; font-size:10px; color:#94a3b8; border-top:1px solid #e2e8f0; padding-top:12px; }
+    @media print { body { padding:16px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>💧 AQURO Water Quality Report</h1>
+    <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
+  </div>
+  <div class="divider"></div>
+  <div class="info-grid">
+    <div class="info-item"><label>Sample ID</label><p>${record.sampleId}</p></div>
+    <div class="info-item"><label>Test Date</label><p>${record.date}</p></div>
+    <div class="info-item"><label>Sample Source</label><p>${record.source}</p></div>
+    <div class="info-item"><label>Tested By</label><p>${record.testedBy}</p></div>
+    <div class="info-item"><label>Overall Status</label>
+      <p><span class="badge" style="background:${statusColors[overall]};">${overallCfg.label}</span></p>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <table>
+    <thead><tr><th>Parameter</th><th>Result</th><th>Acceptable Limit</th><th>Status</th></tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+  ${record.remarks ? `<div class="remarks"><strong>Remarks / Notes:</strong>${record.remarks}</div>` : ''}
+  <div class="footer">AQURO — Water Quality Management System &nbsp;|&nbsp; Confidential Report</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) { alert('Popup blocked! Please allow popups for this site.'); return; }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 600);
+  };
+
+  const filtered = filterStatus === 'all'
+    ? records
+    : records.filter((r) => getOverallStatus(r) === filterStatus);
+
+  // Summary stats
+  const totalTests = records.length;
+  const passed = records.filter((r) => getOverallStatus(r) === 'pass').length;
+  const failed = records.filter((r) => getOverallStatus(r) === 'fail').length;
+  const warnings = records.filter((r) => getOverallStatus(r) === 'warning').length;
+
+  return (
+    <div className="space-y-6">
+
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <TestTube className="w-7 h-7 text-aquro-500" />
+            Water Quality Management
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            NABL standard parameters — track every water test report here.
+          </p>
+        </div>
+        <button
+          onClick={() => { setForm(emptyForm()); setShowModal(true); }}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-aquro-600 to-aquro-500 text-white rounded-xl shadow-md shadow-aquro-500/30 hover:shadow-lg hover:scale-105 transition-all text-sm font-semibold"
+        >
+          <Plus className="w-4 h-4" />
+          Add Test Report
+        </button>
+      </div>
+
+      {/* ── Summary Cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Tests', value: totalTests, icon: FlaskConical, color: 'from-aquro-500 to-aquro-400', light: 'bg-aquro-50 text-aquro-600' },
+          { label: 'Passed', value: passed, icon: ShieldCheck, color: 'from-emerald-500 to-emerald-400', light: 'bg-emerald-50 text-emerald-600' },
+          { label: 'Failed', value: failed, icon: XCircle, color: 'from-red-500 to-red-400', light: 'bg-red-50 text-red-600' },
+          { label: 'Warnings', value: warnings, icon: AlertTriangle, color: 'from-amber-500 to-amber-400', light: 'bg-amber-50 text-amber-600' },
+        ].map((s) => (
+          <div key={s.label} className="glass-card p-5 flex items-center gap-4 hover:border-aquro-300 transition-colors">
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-tr ${s.color} flex items-center justify-center shadow-sm flex-shrink-0`}>
+              <s.icon className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-slate-500 text-xs font-medium">{s.label}</p>
+              <p className="text-2xl font-bold text-slate-800">{s.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Filter Bar ── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {['all', 'pass', 'warning', 'fail'].map((f) => {
+          const labels = { all: 'All Tests', pass: 'Passed', warning: 'Warning', fail: 'Failed' };
+          const colors = {
+            all: 'bg-slate-800 text-white',
+            pass: 'bg-emerald-500 text-white',
+            warning: 'bg-amber-500 text-white',
+            fail: 'bg-red-500 text-white',
+          };
+          return (
+            <button
+              key={f}
+              onClick={() => setFilterStatus(f)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${filterStatus === f ? colors[f] + ' shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+            >
+              {labels[f]}
+            </button>
+          );
+        })}
+        <span className="ml-auto text-sm text-slate-400">{filtered.length} record(s)</span>
+      </div>
+
+      {/* ── Records List ── */}
+      {filtered.length === 0 ? (
+        <div className="glass-card p-16 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-aquro-50 flex items-center justify-center mb-4">
+            <TestTube className="w-8 h-8 text-aquro-400" />
+          </div>
+          <h3 className="text-slate-700 font-semibold text-lg mb-1">Koi test record nahi mila</h3>
+          <p className="text-slate-400 text-sm">"Add Test Report" button se naya report add karein.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((record) => {
+            const overall = getOverallStatus(record);
+            const cfg = STATUS_CONFIG[overall];
+            const StatusIcon = cfg.icon;
+            const isExpanded = expandedId === record.id;
+
+            return (
+              <div key={record.id} className={`bg-white rounded-2xl border ${cfg.border} shadow-sm overflow-hidden transition-all`}>
+                {/* Card Header */}
+                <div
+                  className="flex items-center gap-4 p-4 cursor-pointer hover:bg-slate-50/50 transition-colors"
+                  onClick={() => setExpandedId(isExpanded ? null : record.id)}
+                >
+                  <div className={`w-10 h-10 rounded-xl ${cfg.bg} flex items-center justify-center flex-shrink-0`}>
+                    <StatusIcon className={`w-5 h-5 ${cfg.color}`} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-slate-800 text-sm">{record.sampleId}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>
+                        {cfg.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> {record.date}
+                      </span>
+                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                        <Droplets className="w-3 h-3" /> {record.source}
+                      </span>
+                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                        <Activity className="w-3 h-3" /> By: {record.testedBy}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDownloadPDF(record); }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-aquro-600 hover:bg-aquro-50 transition-colors"
+                      title="Download PDF"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(record.id); }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      title="Delete Record"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+
+                {/* Expanded Parameters */}
+                {isExpanded && (
+                  <div className="border-t border-slate-100 p-4 bg-slate-50/50">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+                      {PARAMETERS.map((param) => {
+                        const val = record[param.key];
+                        const status = getParamStatus(param.key, val);
+                        const pCfg = STATUS_CONFIG[status];
+                        return (
+                          <div key={param.key} className={`bg-white rounded-xl border ${pCfg.border} p-3 flex flex-col gap-1`}>
+                            <p className="text-xs text-slate-500 font-medium leading-tight">
+                              {param.icon} {param.label}
+                            </p>
+                            <p className="text-base font-bold text-slate-800">
+                              {val !== '' && val !== undefined && val !== null ? val : '—'}
+                              {val !== '' && val !== undefined && val !== null && param.unit ? (
+                                <span className="text-xs font-normal text-slate-400 ml-1">{param.unit}</span>
+                              ) : null}
+                            </p>
+                            <span className={`text-xs font-semibold ${pCfg.color}`}>{pCfg.label}</span>
+                            <p className="text-xs text-slate-400">
+                              Limit: {param.key === 'coliform' ? '0' : `${param.min}–${param.max}`}
+                              {param.unit ? ` ${param.unit}` : ''}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {record.remarks && (
+                      <div className="bg-white border border-slate-200 rounded-xl p-3 flex items-start gap-2">
+                        <FileText className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-slate-600"><span className="font-semibold">Remarks:</span> {record.remarks}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Add Test Modal ── */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-200 animate-fadeIn">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-aquro-600 to-aquro-500 rounded-t-2xl">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <FlaskConical className="w-5 h-5" />
+                New Water Quality Test Report
+              </h2>
+              <button onClick={() => setShowModal(false)} className="text-white/80 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Sample ID *
+                  </label>
+                  <input
+                    name="sampleId"
+                    value={form.sampleId}
+                    onChange={handleChange}
+                    placeholder="e.g. WQ-2025-001"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-aquro-400 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Test Date *
+                  </label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={form.date}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-aquro-400 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Sample Source
+                  </label>
+                  <select
+                    name="source"
+                    value={form.source}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-aquro-400 focus:border-transparent"
+                  >
+                    <option>RO Plant Output</option>
+                    <option>Pre-RO Input</option>
+                    <option>Borewell</option>
+                    <option>Final Product Sample</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Tested By *
+                  </label>
+                  <input
+                    name="testedBy"
+                    value={form.testedBy}
+                    onChange={handleChange}
+                    placeholder="e.g. Lab Technician Name"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-aquro-400 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Parameters */}
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  Quality Parameters (NABL Standard)
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {PARAMETERS.map((param) => (
+                    <div key={param.key} className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">
+                        {param.icon} {param.label}
+                      </label>
+                      <input
+                        type="number"
+                        name={param.key}
+                        value={form[param.key]}
+                        onChange={handleChange}
+                        step="any"
+                        placeholder={`Max: ${param.max}${param.unit ? ' ' + param.unit : ''}`}
+                        className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-aquro-400 focus:border-transparent"
+                      />
+                      {form[param.key] !== '' && (
+                        <span className={`text-xs font-semibold mt-1 block ${STATUS_CONFIG[getParamStatus(param.key, form[param.key])].color}`}>
+                          {STATUS_CONFIG[getParamStatus(param.key, form[param.key])].label}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Remarks */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Remarks / Notes
+                </label>
+                <textarea
+                  name="remarks"
+                  value={form.remarks}
+                  onChange={handleChange}
+                  rows={3}
+                  placeholder="Koi additional observation ya notes likhein..."
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-aquro-400 focus:border-transparent resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAdd}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-aquro-600 to-aquro-500 text-white text-sm font-bold shadow-md shadow-aquro-500/30 hover:shadow-lg hover:scale-105 transition-all"
+              >
+                Save Test Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

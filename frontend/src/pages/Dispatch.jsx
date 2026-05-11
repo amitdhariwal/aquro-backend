@@ -1,0 +1,360 @@
+import React, { useState, useEffect } from 'react';
+import { Plus, Filter, Download, Edit2, Trash2, Truck, X } from 'lucide-react';
+
+export default function Dispatch() {
+  const sizes = ['200ml', '500ml', '1L', '2L'];
+  const [customers, setCustomers] = useState([]);
+
+  const [dispatches, setDispatches] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [formData, setFormData] = useState({ id: null, challan: '', customer: '', size: '1L', boxes: '', rate: '', qty: 0, vehicle: '', driver: '', status: 'In Transit' });
+
+  const getPiecesPerBox = (size) => {
+    switch(size) {
+      case '200ml': return 48;
+      case '500ml': return 24;
+      case '1L': return 12;
+      case '2L': return 6;
+      default: return 12;
+    }
+  };
+
+  useEffect(() => {
+    fetchDispatches();
+    fetchCustomers();
+  }, []);
+
+  const fetchDispatches = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/dispatches');
+      if (res.ok) {
+        const data = await res.json();
+        setDispatches(data.map(d => ({ ...d, id: d._id })));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchCustomers = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/customers');
+      if (res.ok) {
+        const data = await res.json();
+        setCustomers(data.map(c => ({ id: c._id, name: c.businessName })));
+        if (data.length > 0 && !formData.customer) {
+          setFormData(prev => ({ ...prev, customer: data[0].businessName }));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const generateChallan = () => {
+    return 'CH-' + Math.floor(1000 + Math.random() * 9000);
+  };
+
+  const openModal = (item = null) => {
+    if (item) {
+      setFormData(item);
+    } else {
+      setFormData({ 
+        id: null, 
+        challan: generateChallan(), 
+        customer: customers.length > 0 ? customers[0].name : '', 
+        size: '1L', 
+        boxes: '',
+        rate: '',
+        qty: 0, 
+        vehicle: '', 
+        driver: '', 
+        status: 'In Transit' 
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const bx = parseInt(formData.boxes) || 0;
+    const rt = parseFloat(formData.rate) || 0;
+    const q = bx * getPiecesPerBox(formData.size);
+
+    const payload = {
+      ...formData,
+      date: formData.id ? dispatches.find(d => d.id === formData.id)?.date : new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
+      boxes: bx, rate: rt, qty: q, totalAmount: bx * rt
+    };
+
+    try {
+      const isEdit = !!formData.id;
+      const url = isEdit ? `http://localhost:5000/api/dispatches/${formData.id}` : 'http://localhost:5000/api/dispatches';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        fetchDispatches();
+        setIsModalOpen(false);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Backend connection error');
+    }
+  };
+
+  const handleDelete = async (id, challan) => {
+    if (window.confirm(`Are you sure you want to delete challan ${challan}?`)) {
+      try {
+        const res = await fetch(`http://localhost:5000/api/dispatches/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          fetchDispatches();
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  const filtered = dispatches.filter(d => 
+    d.challan.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    d.customer.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Dispatch & Delivery</h1>
+          <p className="text-slate-500 text-sm mt-1">Manage outbound shipments and delivery tracking.</p>
+        </div>
+        <button 
+          onClick={() => openModal()}
+          className="px-4 py-2 bg-gradient-to-r from-aquro-600 to-aquro-500 text-white rounded-lg shadow-sm shadow-aquro-500/30 hover:shadow-md transition-all text-sm font-medium flex items-center"
+        >
+          <Truck className="w-4 h-4 mr-2" />
+          New Dispatch
+        </button>
+      </div>
+
+      <div className="glass-card overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="relative">
+              <input 
+                type="text" 
+                placeholder="Search challan or customer..." 
+                className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 bg-white/50 w-64"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Filter className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            </div>
+            <button className="p-2 text-slate-500 hover:text-aquro-600 bg-white/50 border border-slate-200 rounded-lg transition-colors">
+              <Download className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50/50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Challan No</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Item Details</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Vehicle/Driver</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white/30 divide-y divide-slate-200">
+                {filtered.length === 0 ? (
+                  <tr><td colSpan="7" className="px-6 py-8 text-center text-slate-500">No dispatches found.</td></tr>
+                ) : (
+                  filtered.map((item) => (
+                    <tr key={item.id} className="hover:bg-white/50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{item.date}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{item.challan}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{item.customer}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                        <span className="font-bold text-slate-800">{item.boxes} Boxes</span> <span className="text-xs text-slate-400">({item.qty} pcs)</span>
+                        <div className="text-xs text-slate-500 mt-0.5">{item.size} • ₹{item.rate}/box</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                        <div>{item.vehicle}</div>
+                        <div className="text-xs text-slate-400">{item.driver}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className="font-bold text-slate-700 block mb-1">₹{item.totalAmount || 0}</span>
+                        <span className={`px-2 inline-flex text-[10px] leading-5 font-semibold rounded-full ${
+                          item.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' :
+                          item.status === 'In Transit' ? 'bg-blue-100 text-blue-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onClick={() => openModal(item)} className="text-blue-500 hover:text-blue-700 mr-3 transition-colors" title="Edit">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(item.id, item.challan)} className="text-red-500 hover:text-red-700 transition-colors" title="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden relative">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-800">{formData.id ? 'Edit Dispatch' : 'New Dispatch Entry'}</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Challan Number</label>
+                  <input 
+                    type="text" 
+                    required
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 font-medium text-slate-700"
+                    value={formData.challan}
+                    onChange={(e) => setFormData({...formData, challan: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                  <select 
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                    value={formData.status}
+                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="In Transit">In Transit</option>
+                    <option value="Delivered">Delivered</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
+                <select 
+                  required
+                  className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                  value={formData.customer}
+                  onChange={(e) => setFormData({...formData, customer: e.target.value})}
+                >
+                  {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Bottle Size</label>
+                  <select 
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                    value={formData.size}
+                    onChange={(e) => setFormData({...formData, size: e.target.value})}
+                  >
+                    {sizes.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <p className="text-[10px] text-slate-400 mt-1">{getPiecesPerBox(formData.size)} pcs / peti</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Total Boxes (Peti)</label>
+                  <input 
+                    type="number" 
+                    required
+                    min="1"
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 font-bold"
+                    value={formData.boxes}
+                    onChange={(e) => setFormData({...formData, boxes: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Rate / Box (₹)</label>
+                  <input 
+                    type="number" 
+                    required
+                    min="0"
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 font-bold text-aquro-600"
+                    value={formData.rate}
+                    onChange={(e) => setFormData({...formData, rate: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              {/* Total Calculation Preview */}
+              {(formData.boxes && formData.rate) ? (
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center">
+                  <div className="text-sm text-slate-600">
+                    Total: <span className="font-semibold text-slate-800">{parseInt(formData.boxes) * getPiecesPerBox(formData.size)} pcs</span>
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    Total Amount: <span className="text-lg font-bold text-aquro-600">₹{parseFloat(formData.boxes) * parseFloat(formData.rate)}</span>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Vehicle No</label>
+                  <input 
+                    type="text" 
+                    required
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                    value={formData.vehicle}
+                    onChange={(e) => setFormData({...formData, vehicle: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Driver Name</label>
+                  <input 
+                    type="text" 
+                    required
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                    value={formData.driver}
+                    onChange={(e) => setFormData({...formData, driver: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-1 py-2 bg-gradient-to-r from-aquro-600 to-aquro-500 text-white rounded-lg hover:shadow-md transition-all font-medium text-sm"
+                >
+                  Save Dispatch
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
