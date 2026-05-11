@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Filter, Download, Edit2, Trash2, History, X, Package, Calendar } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 export default function Production() {
@@ -305,7 +305,7 @@ export default function Production() {
       ]);
     });
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 35,
