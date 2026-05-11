@@ -12,6 +12,17 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET all payments across all customers
+router.get('/payments/all', async (req, res) => {
+  try {
+    const CustomerPayment = require('../models/CustomerPayment');
+    const payments = await CustomerPayment.find();
+    res.json(payments);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // GET single customer
 router.get('/:id', async (req, res) => {
   try {

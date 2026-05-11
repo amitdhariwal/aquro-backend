@@ -22,7 +22,7 @@ const data = [
 export default function Dashboard() {
   const [totalProduction, setTotalProduction] = useState('0');
   const [totalSales, setTotalSales] = useState('0');
-  const [pendingDeliveries, setPendingDeliveries] = useState('0');
+  const [totalPendingAmount, setTotalPendingAmount] = useState('0');
   const [deliveredOrders, setDeliveredOrders] = useState('0');
   const [readyStock, setReadyStock] = useState({ '200ml': 0, '500ml': 0, '1L': 0, '2L': 0 });
   const [activities, setActivities] = useState([
@@ -63,14 +63,23 @@ export default function Dashboard() {
       const resDisp = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/dispatches');
       if (resDisp.ok) {
         dispData = await resDisp.json();
-        const pendingCount = dispData.filter(d => d.status === 'Pending' || d.status === 'In Transit').length;
         const deliveredCount = dispData.filter(d => d.status === 'Delivered').length;
-        
         const salesAmount = dispData.reduce((sum, d) => sum + (Number(d.totalAmount) || 0), 0);
         
-        setPendingDeliveries(pendingCount.toString());
         setDeliveredOrders(deliveredCount.toString());
         setTotalSales(salesAmount.toLocaleString('en-IN'));
+
+        try {
+          const resPay = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers/payments/all');
+          if (resPay.ok) {
+            const allPayments = await resPay.json();
+            const totalPaid = allPayments.filter(p => p.type === 'PAYMENT').reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+            const pendingAmount = salesAmount - totalPaid;
+            setTotalPendingAmount(pendingAmount.toLocaleString('en-IN'));
+          }
+        } catch(e) {
+          console.error("Error fetching payments", e);
+        }
       }
 
       // Calculate Ready Stock
@@ -108,9 +117,9 @@ export default function Dashboard() {
   }, []);
 
   const stats = [
-    { title: 'Total Daily Production', value: totalProduction, unit: 'Bottles', icon: Droplet, trend: 'Live', trendUp: true },
+    { title: 'Total Production', value: totalProduction, unit: 'Bottles', icon: Droplet, trend: 'Live', trendUp: true },
     { title: 'Total Sales (Revenue)', value: '₹' + totalSales, unit: '', icon: IndianRupee, trend: 'Gross Sales', trendUp: true },
-    { title: 'Pending Deliveries', value: pendingDeliveries, unit: 'Orders', icon: Truck, trend: 'In Transit', trendUp: false },
+    { title: 'Total Pending Amount', value: '₹' + totalPendingAmount, unit: '', icon: TrendingUp, trend: 'To Collect', trendUp: false },
     { title: 'Delivered Orders', value: deliveredOrders, unit: 'Orders', icon: Package, trend: 'Completed', trendUp: true },
   ];
 
