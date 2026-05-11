@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Filter, Download, Edit2, Trash2, History, X } from 'lucide-react';
+import { Plus, Filter, Download, Edit2, Trash2, History, X, Package, Calendar } from 'lucide-react';
 
 export default function Production() {
   const sizes = ['200ml', '500ml', '1L', '2L'];
@@ -12,6 +12,7 @@ export default function Production() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [filterSize, setFilterSize] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
   const [formData, setFormData] = useState({ id: null, date: '', batch: '', size: '1L', qty: '', label: 'Standard', clientName: '', capColor: 'Blue' });
 
   useEffect(() => {
@@ -257,8 +258,20 @@ export default function Production() {
     const matchSize = filterSize === 'All' || p.size === filterSize;
     const matchSearch = p.batch.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         (p.label === 'Custom' && p.clientName && p.clientName.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchSize && matchSearch;
+    let matchDate = true;
+    if (dateFilter.start && dateFilter.end) {
+      matchDate = p.date >= dateFilter.start && p.date <= dateFilter.end;
+    } else if (dateFilter.start) {
+      matchDate = p.date >= dateFilter.start;
+    } else if (dateFilter.end) {
+      matchDate = p.date <= dateFilter.end;
+    }
+    return matchSize && matchSearch && matchDate;
   });
+
+  const totalProductionQty = filteredProductions.reduce((sum, p) => sum + p.qty, 0);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayProductionQty = productions.filter(p => p.date === todayStr).reduce((sum, p) => sum + p.qty, 0);
 
   return (
     <div className="space-y-6">
@@ -285,9 +298,65 @@ export default function Production() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="glass-card p-6 flex items-center gap-4 relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
+          <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl shadow-lg shadow-blue-500/30">
+            <Package className="w-7 h-7" />
+          </div>
+          <div>
+            <p className="text-sm text-slate-500 font-medium">Filtered Total Production</p>
+            <div className="flex items-end gap-2 mt-1">
+              <h3 className="text-3xl font-bold text-slate-800">{totalProductionQty.toLocaleString()}</h3>
+              <span className="text-slate-500 text-sm mb-1 font-medium">Bottles</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="glass-card p-6 flex items-center gap-4 relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl"></div>
+          <div className="p-4 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-500/30">
+            <Calendar className="w-7 h-7" />
+          </div>
+          <div>
+            <p className="text-sm text-slate-500 font-medium">Today's Production</p>
+            <div className="flex items-end gap-2 mt-1">
+              <h3 className="text-3xl font-bold text-slate-800">{todayProductionQty.toLocaleString()}</h3>
+              <span className="text-slate-500 text-sm mb-1 font-medium">Bottles</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="glass-card overflow-hidden">
-        <div className="border-b border-slate-200/50 px-6 py-4">
+        <div className="border-b border-slate-200/50 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2 className="text-lg font-medium text-slate-800">Bottle Filling Records</h2>
+          <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+            <input 
+              type="date" 
+              className="px-2 py-1 bg-white border border-slate-200 rounded text-sm text-slate-600 focus:outline-none focus:border-aquro-500"
+              value={dateFilter.start}
+              onChange={(e) => setDateFilter({...dateFilter, start: e.target.value})}
+              title="Start Date"
+            />
+            <span className="text-slate-400 text-sm">to</span>
+            <input 
+              type="date" 
+              className="px-2 py-1 bg-white border border-slate-200 rounded text-sm text-slate-600 focus:outline-none focus:border-aquro-500"
+              value={dateFilter.end}
+              onChange={(e) => setDateFilter({...dateFilter, end: e.target.value})}
+              title="End Date"
+            />
+            {(dateFilter.start || dateFilter.end) && (
+              <button 
+                onClick={() => setDateFilter({start: '', end: ''})}
+                className="text-slate-400 hover:text-red-500 ml-1"
+                title="Clear Dates"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
         
         <div className="p-6">
