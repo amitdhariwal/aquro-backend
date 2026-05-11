@@ -12,7 +12,7 @@ export default function Production() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [filterSize, setFilterSize] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [formData, setFormData] = useState({ id: null, batch: '', size: '1L', qty: '', label: 'Standard', clientName: '', capColor: 'Blue' });
+  const [formData, setFormData] = useState({ id: null, date: '', batch: '', size: '1L', qty: '', label: 'Standard', clientName: '', capColor: 'Blue' });
 
   useEffect(() => {
     fetchProductions();
@@ -96,13 +96,14 @@ export default function Production() {
       }
     }
 
-    // Calculate expiry (6 months from now)
-    const expiryDate = new Date();
+    // Calculate expiry (6 months from selected date)
+    const productionDateObj = formData.date ? new Date(formData.date) : new Date();
+    const expiryDate = new Date(productionDateObj);
     expiryDate.setMonth(expiryDate.getMonth() + 6);
     const formattedExpiry = expiryDate.toLocaleDateString('en-GB');
 
     const entryData = {
-      date: formData.id ? productions.find(p => p.id === formData.id)?.date : new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
+      date: formData.date,
       batch: formData.batch,
       expiry: formattedExpiry,
       size: formData.size,
@@ -188,6 +189,7 @@ export default function Production() {
     } else {
       setFormData({ 
         id: null,
+        date: new Date().toISOString().split('T')[0],
         batch: generateBatchCode(), 
         size: '1L', 
         capColor: 'Blue',
@@ -380,6 +382,16 @@ export default function Production() {
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Production Date</label>
+                  <input 
+                    type="date" 
+                    required
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 font-medium text-slate-700"
+                    value={formData.date}
+                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Batch Number</label>
                   <input 
                     type="text" 
@@ -389,6 +401,9 @@ export default function Production() {
                     onChange={(e) => setFormData({...formData, batch: e.target.value.toUpperCase()})}
                   />
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Bottle Size</label>
                   <select 
