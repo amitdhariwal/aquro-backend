@@ -95,6 +95,25 @@ export default function Production() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ current: newCurrent })
             });
+
+            const detailsText = isReverting 
+              ? `Reverted from Production Batch #${entry.batch}` 
+              : `Used in Production Batch #${entry.batch} (${entry.date})`;
+
+            await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory/history', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                date: new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric', year: 'numeric' }),
+                itemName: item.name, 
+                previousStock: item.current, 
+                addedQty: qtyToAdjust, 
+                newStock: newCurrent,
+                supplier: isReverting ? 'Stock Reversal' : 'Production Usage', 
+                notes: detailsText, 
+                amount: 0
+              })
+            });
           }
         }
       }
