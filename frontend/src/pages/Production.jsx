@@ -59,6 +59,45 @@ export default function Production() {
     }
   };
 
+  const adjustInventoryForProduction = async (entry, isReverting = false) => {
+    try {
+      const invRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory');
+      if (invRes.ok) {
+        const inventory = await invRes.json();
+        for (let item of inventory) {
+          let qtyToAdjust = isReverting ? entry.qty : -entry.qty;
+          let shouldUpdate = false;
+          let newCurrent = item.current;
+
+          if (item.customId === `inv-${entry.size}`) {
+            newCurrent = Math.max(0, item.current + qtyToAdjust);
+            shouldUpdate = true;
+          } else if (item.customId === `inv-caps-${entry.capColor.toLowerCase()}` || 
+              (item.name.toLowerCase().includes('cap') && item.name.toLowerCase().includes(entry.capColor.toLowerCase()))) {
+            newCurrent = Math.max(0, item.current + qtyToAdjust);
+            shouldUpdate = true;
+          } else if (entry.label === 'Standard' && item.customId === 'inv-std-lbl') {
+            newCurrent = Math.max(0, item.current + qtyToAdjust);
+            shouldUpdate = true;
+          } else if (entry.label === 'Custom' && item.name.toLowerCase().includes((entry.clientName || '').toLowerCase())) {
+            newCurrent = Math.max(0, item.current + qtyToAdjust);
+            shouldUpdate = true;
+          }
+
+          if (shouldUpdate) {
+            await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/${item._id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ current: newCurrent })
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -118,12 +157,20 @@ export default function Production() {
     try {
       if (formData.id) {
         const oldEntry = productions.find(p => p.id === formData.id);
-        await fetch(`/api/production/${formData.id}`, {
+        
+        // Revert old inventory
+        await adjustInventoryForProduction(oldEntry, true);
+
+        await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/production/${formData.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(entryData)
         });
         await addHistoryLog('UPDATE', formData.batch, `Updated size to ${entryData.size}, qty to ${entryData.qty}`, oldEntry);
+        
+        // Deduct new inventory
+        await adjustInventoryForProduction(entryData, false);
+
       } else {
         await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/production', {
           method: 'POST',
@@ -132,38 +179,8 @@ export default function Production() {
         });
         await addHistoryLog('CREATE', formData.batch, `Created new batch ${formData.batch}`);
         
-        // Deduct from Inventory
-        const invRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory');
-        if (invRes.ok) {
-          const inventory = await invRes.json();
-          for (let item of inventory) {
-            let shouldUpdate = false;
-            let newCurrent = item.current;
-
-            if (item.customId === `inv-${entryData.size}`) {
-              newCurrent = Math.max(0, item.current - q);
-              shouldUpdate = true;
-            } else if (item.customId === `inv-caps-${entryData.capColor.toLowerCase()}` || 
-                (item.name.toLowerCase().includes('cap') && item.name.toLowerCase().includes(entryData.capColor.toLowerCase()))) {
-              newCurrent = Math.max(0, item.current - q);
-              shouldUpdate = true;
-            } else if (entryData.label === 'Standard' && item.customId === 'inv-std-lbl') {
-              newCurrent = Math.max(0, item.current - q);
-              shouldUpdate = true;
-            } else if (entryData.label === 'Custom' && item.name.toLowerCase().includes(entryData.clientName.toLowerCase())) {
-              newCurrent = Math.max(0, item.current - q);
-              shouldUpdate = true;
-            }
-
-            if (shouldUpdate) {
-              await fetch(`/api/inventory/${item._id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ current: newCurrent })
-              });
-            }
-          }
-        }
+        // Deduct new inventory
+        await adjustInventoryForProduction(entryData, false);
       }
 
       await fetchProductions();
@@ -205,7 +222,11 @@ export default function Production() {
     if (window.confirm(`Are you sure you want to delete batch ${batch}?`)) {
       try {
         const toDelete = productions.find(p => p.id === id);
-        await fetch(`/api/production/${id}`, { method: 'DELETE' });
+        
+        // Add items back to inventory before deleting
+        await adjustInventoryForProduction(toDelete, true);
+
+        await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/production/${id}`, { method: 'DELETE' });
         await addHistoryLog('DELETE', batch, `Deleted batch ${batch}`, toDelete);
         await fetchProductions();
       } catch (error) {
