@@ -16,6 +16,7 @@ export default function Production() {
   const [filterSize, setFilterSize] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ id: null, date: '', batch: '', size: '1L', qty: '', label: 'Standard', clientName: '', capColor: 'Blue' });
 
   useEffect(() => {
@@ -104,6 +105,8 @@ export default function Production() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     
     const q = parseInt(formData.qty) || 0;
 
@@ -131,6 +134,7 @@ export default function Production() {
 
           if (errors.length > 0) {
             alert("INSUFFICIENT STOCK FOR PRODUCTION:\n\n" + errors.join('\n') + "\n\nPlease add stock in the Inventory page first.");
+            setIsSubmitting(false);
             return;
           }
         }
@@ -193,6 +197,8 @@ export default function Production() {
     } catch (error) {
       console.error(error);
       alert('Backend connection error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -657,9 +663,21 @@ export default function Production() {
                 </button>
                 <button 
                   type="submit" 
-                  className="flex-1 py-2 bg-gradient-to-r from-aquro-600 to-aquro-500 text-white rounded-lg hover:shadow-md transition-all font-medium text-sm"
+                  disabled={isSubmitting}
+                  className={`flex-1 py-2 rounded-lg transition-all font-medium text-sm flex items-center justify-center ${
+                    isSubmitting 
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-aquro-600 to-aquro-500 text-white hover:shadow-md'
+                  }`}
                 >
-                  Save Entry
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Please wait...
+                    </>
+                  ) : (
+                    'Save Entry'
+                  )}
                 </button>
               </div>
             </form>
