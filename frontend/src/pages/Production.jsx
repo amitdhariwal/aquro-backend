@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Filter, Download, Edit2, Trash2, History, X, Package, Calendar } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 export default function Production() {
   const sizes = ['200ml', '500ml', '1L', '2L'];
@@ -273,6 +276,68 @@ export default function Production() {
   const todayStr = new Date().toISOString().split('T')[0];
   const todayProductionQty = productions.filter(p => p.date === todayStr).reduce((sum, p) => sum + p.qty, 0);
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.text('AQURO - Production Report', 14, 15);
+    
+    let dateRangeText = 'All Time';
+    if (dateFilter.start && dateFilter.end) dateRangeText = `${dateFilter.start} to ${dateFilter.end}`;
+    else if (dateFilter.start) dateRangeText = `From ${dateFilter.start}`;
+    else if (dateFilter.end) dateRangeText = `Until ${dateFilter.end}`;
+    
+    doc.setFontSize(10);
+    doc.text(`Date Range: ${dateRangeText}`, 14, 22);
+    doc.text(`Total Bottles Produced: ${totalProductionQty.toLocaleString()}`, 14, 28);
+
+    const tableColumn = ["Date", "Batch Code", "Expiry", "Size", "Cap Color", "Quantity", "Label"];
+    const tableRows = [];
+
+    filteredProductions.forEach(p => {
+      const labelText = p.label === 'Custom' ? `Custom (${p.clientName})` : 'AQURO Standard';
+      tableRows.push([
+        p.date,
+        p.batch,
+        p.expiry,
+        p.size,
+        p.capColor,
+        p.qty,
+        labelText
+      ]);
+    });
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 35,
+    });
+
+    doc.save(`AQURO_Production_${dateRangeText.replace(/ /g, '_')}.pdf`);
+  };
+
+  const handleExportExcel = () => {
+    let dateRangeText = 'All Time';
+    if (dateFilter.start && dateFilter.end) dateRangeText = `${dateFilter.start}_to_${dateFilter.end}`;
+    else if (dateFilter.start) dateRangeText = `From_${dateFilter.start}`;
+    else if (dateFilter.end) dateRangeText = `Until_${dateFilter.end}`;
+
+    const wsData = filteredProductions.map(p => ({
+      "Date": p.date,
+      "Batch Code": p.batch,
+      "Expiry Date": p.expiry,
+      "Bottle Size": p.size,
+      "Cap Color": p.capColor,
+      "Quantity (Pcs)": p.qty,
+      "Label Type": p.label === 'Custom' ? `Custom (${p.clientName})` : 'AQURO Standard',
+      "Operator": p.operator
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Production");
+    
+    XLSX.writeFile(wb, `AQURO_Production_${dateRangeText}.xlsx`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -381,9 +446,20 @@ export default function Production() {
                 {sizes.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            <button className="p-2 text-slate-500 hover:text-aquro-600 bg-white/50 border border-slate-200 rounded-lg transition-colors">
-              <Download className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleExportPDF}
+                className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors flex items-center shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5 mr-1" /> PDF
+              </button>
+              <button 
+                onClick={handleExportExcel}
+                className="px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 border border-emerald-200 rounded-lg transition-colors flex items-center shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5 mr-1" /> Excel
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
