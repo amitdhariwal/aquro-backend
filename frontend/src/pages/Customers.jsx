@@ -369,6 +369,7 @@ export default function Customers() {
   const maxPendingAmount = Math.max(...customersWithStats.map(c => c.pending), 0);
   const totalReceived = customersWithStats.reduce((sum, c) => sum + c.paid, 0);
   const totalPending = customersWithStats.reduce((sum, c) => sum + c.pending, 0);
+  const totalSale = totalReceived + totalPending;
 
   const filtered = customersWithStats.filter(c => {
     const matchesSearch = c.businessName.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -454,7 +455,14 @@ export default function Customers() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 border-l-4 border-l-blue-500">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-lg"><Package className="w-6 h-6" /></div>
+          <div>
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Total Sales (Billed)</p>
+            <p className="text-2xl font-bold text-slate-800 mt-1">₹{totalSale.toLocaleString()}</p>
+          </div>
+        </div>
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg"><ArrowDownRight className="w-6 h-6" /></div>
           <div>
