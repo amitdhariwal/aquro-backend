@@ -62,7 +62,10 @@ router.put('/:id', async (req, res) => {
     const customer = await Customer.findById(req.params.id);
     if (!customer) return res.status(404).json({ message: 'Customer not found' });
 
-    customer.businessName = req.body.businessName || customer.businessName;
+    const oldBusinessName = customer.businessName;
+    const newBusinessName = req.body.businessName || customer.businessName;
+
+    customer.businessName = newBusinessName;
     customer.category = req.body.category || customer.category;
     customer.ownerName = req.body.ownerName || customer.ownerName;
     customer.mobile = req.body.mobile || customer.mobile;
@@ -73,6 +76,16 @@ router.put('/:id', async (req, res) => {
     if (req.body.image !== undefined) customer.image = req.body.image;
 
     const updatedCustomer = await customer.save();
+
+    // Cascade name change to Dispatch entries
+    if (oldBusinessName !== newBusinessName) {
+      const Dispatch = require('../models/Dispatch');
+      await Dispatch.updateMany(
+        { customer: oldBusinessName },
+        { $set: { customer: newBusinessName } }
+      );
+    }
+
     res.json(updatedCustomer);
   } catch (error) {
     res.status(400).json({ message: error.message });
