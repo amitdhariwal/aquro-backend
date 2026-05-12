@@ -12,6 +12,7 @@ export default function Customers() {
   const [filterCategory, setFilterCategory] = useState('All');
   const [formData, setFormData] = useState(getInitialForm());
   const [previewImage, setPreviewImage] = useState(null);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
   const blocks = ['Amroha', 'Joya', 'Hasanpur', 'Gajraula', 'Dhanora', 'Naugawan Sadat'];
   const categories = ['Shop', 'Restaurant', 'Banquet Hall', 'Hotel', 'College', 'University', 'Corporate Office', 'Other'];
@@ -74,7 +75,7 @@ export default function Customers() {
 
   const fetchCustomerPayments = async (customerId) => {
     try {
-      const resPay = await fetch(`/api/customers/${customerId}/payments`);
+      const resPay = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/customers/${customerId}/payments`);
       if (resPay.ok) {
         const allPayments = await resPay.json();
         setCustomerPayments(allPayments);
@@ -89,6 +90,9 @@ export default function Customers() {
 
   const handleAddPayment = async (e) => {
     e.preventDefault();
+    if (isSubmittingPayment) return;
+    setIsSubmittingPayment(true);
+    
     const entry = {
       date: paymentForm.date,
       type: paymentForm.type, // 'PAYMENT' or 'BILL'
@@ -97,18 +101,20 @@ export default function Customers() {
     };
 
     try {
-      const response = await fetch(`/api/customers/${selectedCustomer.id}/payments`, {
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/customers/${selectedCustomer.id}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry)
       });
       if (response.ok) {
         fetchCustomerPayments(selectedCustomer.id);
-        setPaymentForm({ date: new Date().toISOString().split('T')[0], type: 'PAYMENT', amount: '', note: '' });
+        setPaymentForm({ date: new Date().toISOString().split('T')[0], type: 'PAYMENT', bottles: '', amount: '', note: '' });
       }
     } catch (error) {
       console.error(error);
       alert('Failed to add payment');
+    } finally {
+      setIsSubmittingPayment(false);
     }
   };
 
@@ -261,7 +267,7 @@ export default function Customers() {
     
     try {
       const url = isEdit 
-        ? `/api/customers/${formData.id}` 
+        ? (import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/customers/${formData.id}` 
         : (import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers';
       const method = isEdit ? 'PUT' : 'POST';
 
@@ -287,7 +293,7 @@ export default function Customers() {
   const handleDelete = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete ${name}?`)) {
       try {
-        const response = await fetch(`/api/customers/${id}`, {
+        const response = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/customers/${id}`, {
           method: 'DELETE'
         });
         if (response.ok) {
@@ -713,7 +719,20 @@ export default function Customers() {
                       </div>
                       <div className="col-span-2 flex gap-2">
                         <input type="text" placeholder="Remarks / Ref No" className="flex-1 p-2 border border-slate-200 rounded text-sm" value={paymentForm.note} onChange={e => setPaymentForm({...paymentForm, note: e.target.value})} />
-                        <button type="submit" className="px-4 py-2 bg-aquro-600 text-white rounded text-sm font-medium hover:bg-aquro-700">Add Entry</button>
+                        <button 
+                          type="submit" 
+                          disabled={isSubmittingPayment}
+                          className={`px-4 py-2 text-white rounded text-sm font-medium flex items-center justify-center transition-colors ${
+                            isSubmittingPayment ? 'bg-aquro-400 cursor-not-allowed' : 'bg-aquro-600 hover:bg-aquro-700'
+                          }`}
+                        >
+                          {isSubmittingPayment ? (
+                            <>
+                              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                              Saving...
+                            </>
+                          ) : 'Add Entry'}
+                        </button>
                       </div>
                     </form>
                   </div>
