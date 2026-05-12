@@ -12,7 +12,18 @@ export default function Login({ setIsAuthenticated }) {
     e.preventDefault();
     setError('');
     
-    if (username === 'aquro' && password === '1234') {
+    const users = {
+      'akash gupta': { pass: 'akash123', role: 'admin' },
+      'amit': { pass: 'amit123', role: 'viewer' },
+      'nitin': { pass: 'nitin123', role: 'viewer' },
+      'ritik': { pass: 'ritik123', role: 'viewer' },
+      'aquro': { pass: '1234', role: 'admin' } // Keep the default one just in case
+    };
+
+    const user = users[username.toLowerCase().trim()];
+
+    if (user && user.pass === password) {
+      localStorage.setItem('userRole', user.role);
       setIsAuthenticated(true);
       navigate('/dashboard');
     } else {

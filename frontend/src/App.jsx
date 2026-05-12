@@ -14,6 +14,19 @@ import ReadyStock from './pages/ReadyStock';
 import Suppliers from './pages/Suppliers';
 import Login from './pages/Login';
 
+// Intercept fetch to prevent viewers from modifying data
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+  const role = localStorage.getItem('userRole');
+  const [resource, config] = args;
+  
+  if (role === 'viewer' && config && ['POST', 'PUT', 'DELETE'].includes(config.method?.toUpperCase())) {
+    alert("Access Denied: Viewers cannot add, edit, or delete records. Only Akash Gupta (Admin) can make changes.");
+    return Promise.reject(new Error("Viewer access denied"));
+  }
+  return originalFetch.apply(this, args);
+};
+
 function Layout({ children, setIsAuthenticated }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -42,6 +55,7 @@ function App() {
       localStorage.setItem('aquro_auth', 'true');
     } else {
       localStorage.removeItem('aquro_auth');
+      localStorage.removeItem('userRole');
     }
   };
 
