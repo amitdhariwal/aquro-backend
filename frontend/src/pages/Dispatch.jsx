@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Filter, Download, Edit2, Trash2, Truck, X } from 'lucide-react';
+import { Plus, Filter, Download, Edit2, Trash2, Truck, X, Calendar, FileText, FileSpreadsheet, Package } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 export default function Dispatch() {
   const sizes = ['200ml', '500ml', '1L', '2L'];
@@ -8,6 +11,8 @@ export default function Dispatch() {
   const [dispatches, setDispatches] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
   const [formData, setFormData] = useState({ id: null, challan: '', date: new Date().toISOString().split('T')[0], customer: '', size: '1L', boxes: '', rate: '', qty: 0, vehicle: '', driver: 'Amit dhariwal', status: 'Delivered', isSample: false });
@@ -123,10 +128,58 @@ export default function Dispatch() {
     }
   };
 
-  const filtered = dispatches.filter(d => 
-    d.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (d.driver && d.driver.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filtered = dispatches.filter(d => {
+    const matchesSearch = d.customer.toLowerCase().includes(searchQuery.toLowerCase()) || (d.driver && d.driver.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesStart = startDate ? new Date(d.date) >= new Date(startDate) : true;
+    const matchesEnd = endDate ? new Date(d.date) <= new Date(endDate) : true;
+    return matchesSearch && matchesStart && matchesEnd;
+  });
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('AQURO - Dispatch & Delivery Report', 14, 15);
+    if (startDate || endDate) {
+      doc.setFontSize(10);
+      doc.text(`Date Range: ${startDate || 'Start'} to ${endDate || 'End'}`, 14, 22);
+    }
+    
+    const tableData = filtered.map(d => [
+      d.date, d.challan, d.customer, `${d.boxes} Boxes (${d.size})`, `Rs.${d.totalAmount || 0}`, d.driver || ''
+    ]);
+
+    doc.autoTable({
+      startY: (startDate || endDate) ? 26 : 22,
+      head: [['Date', 'Challan', 'Customer', 'Items', 'Total Amt', 'Driver']],
+      body: tableData,
+    });
+    doc.save('Dispatch_Report.pdf');
+  };
+
+  const exportToExcel = () => {
+    const tableData = filtered.map(d => ({
+      Date: d.date,
+      Challan: d.challan,
+      Customer: d.customer,
+      Size: d.size,
+      Boxes: d.boxes,
+      Rate: d.rate,
+      TotalAmount: d.totalAmount || 0,
+      Driver: d.driver || '',
+      Vehicle: d.vehicle || '',
+      Sample: d.isSample ? 'Yes' : 'No'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(tableData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dispatches");
+    XLSX.writeFile(wb, "Dispatch_Report.xlsx");
+  };
+
+  // Calculate summaries based on filtered data
+  const summary = sizes.reduce((acc, size) => {
+    acc[size] = filtered.filter(d => d.size === size).reduce((sum, d) => sum + (Number(d.boxes) || 0), 0);
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-6">
@@ -144,22 +197,62 @@ export default function Dispatch() {
         </button>
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {sizes.map(size => (
+          <div key={size} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500 uppercase">Total {size}</p>
+              <p className="text-2xl font-bold text-slate-800 mt-1">{summary[size]} <span className="text-sm font-normal text-slate-500">Boxes</span></p>
+            </div>
+            <div className="p-3 bg-aquro-50 text-aquro-600 rounded-lg">
+              <Package className="w-5 h-5" />
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="glass-card overflow-hidden">
         <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="relative">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+            <div className="relative flex-1 max-w-sm w-full">
               <input 
                 type="text" 
                 placeholder="Search customer or driver..." 
-                className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 bg-white/50 w-64"
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 bg-white/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Filter className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             </div>
-            <button className="p-2 text-slate-500 hover:text-aquro-600 bg-white/50 border border-slate-200 rounded-lg transition-colors">
-              <Download className="w-4 h-4" />
-            </button>
+            
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              <div className="flex items-center gap-2 bg-white/50 border border-slate-200 rounded-lg p-1">
+                <input 
+                  type="date" 
+                  className="px-2 py-1 text-sm bg-transparent border-none focus:ring-0 text-slate-600"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+                <span className="text-slate-400">-</span>
+                <input 
+                  type="date" 
+                  className="px-2 py-1 text-sm bg-transparent border-none focus:ring-0 text-slate-600"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+                {(startDate || endDate) && (
+                  <button onClick={() => { setStartDate(''); setEndDate(''); }} className="p-1 hover:bg-slate-200 rounded-full text-slate-400">
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+              <button onClick={exportToPDF} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                <FileText className="w-4 h-4 text-red-500" /> PDF
+              </button>
+              <button onClick={exportToExcel} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> Excel
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
