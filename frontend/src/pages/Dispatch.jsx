@@ -91,7 +91,8 @@ export default function Dispatch() {
 
     try {
       const isEdit = !!formData.id;
-      const url = isEdit ? `/api/dispatches/${formData.id}` : (import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/dispatches';
+      const baseUrl = import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com';
+      const url = isEdit ? `${baseUrl}/api/dispatches/${formData.id}` : `${baseUrl}/api/dispatches`;
       const method = isEdit ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
