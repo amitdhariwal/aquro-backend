@@ -8,6 +8,8 @@ export default function Dispatch() {
   const [dispatches, setDispatches] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
   const [formData, setFormData] = useState({ id: null, challan: '', date: new Date().toISOString().split('T')[0], customer: '', size: '1L', boxes: '', rate: '', qty: 0, vehicle: '', driver: 'Amit dhariwal', status: 'Delivered' });
 
   const getPiecesPerBox = (size) => {
@@ -234,20 +236,47 @@ export default function Dispatch() {
                     onChange={(e) => setFormData({...formData, date: e.target.value})}
                   />
                 </div>
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
                   <input 
                     type="text"
-                    list="customer-list"
                     required
                     placeholder="Search or type customer name..."
                     className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
                     value={formData.customer}
-                    onChange={(e) => setFormData({...formData, customer: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, customer: e.target.value});
+                      setCustomerSearch(e.target.value);
+                      setIsCustomerDropdownOpen(true);
+                    }}
+                    onFocus={() => {
+                      setCustomerSearch('');
+                      setIsCustomerDropdownOpen(true);
+                    }}
+                    onBlur={() => setTimeout(() => setIsCustomerDropdownOpen(false), 200)}
                   />
-                  <datalist id="customer-list">
-                    {customers.map(c => <option key={c.id} value={c.name} />)}
-                  </datalist>
+                  {isCustomerDropdownOpen && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                      {customers
+                        .filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()))
+                        .map(c => (
+                          <div 
+                            key={c.id} 
+                            className="p-2 hover:bg-aquro-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0"
+                            onClick={() => {
+                              setFormData({...formData, customer: c.name});
+                              setCustomerSearch('');
+                              setIsCustomerDropdownOpen(false);
+                            }}
+                          >
+                            {c.name}
+                          </div>
+                      ))}
+                      {customers.filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase())).length === 0 && (
+                        <div className="p-2 text-sm text-slate-400 text-center">No customers found</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -304,7 +333,6 @@ export default function Dispatch() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Vehicle No</label>
                   <input 
                     type="text" 
-                    required
                     className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
                     value={formData.vehicle}
                     onChange={(e) => setFormData({...formData, vehicle: e.target.value})}
