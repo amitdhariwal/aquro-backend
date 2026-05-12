@@ -55,4 +55,24 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// PUT update history entry
+router.put('/history/:id', async (req, res) => {
+  try {
+    const updated = await InventoryHistory.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// DELETE history entry
+router.delete('/history/:id', async (req, res) => {
+  try {
+    await InventoryHistory.findByIdAndDelete(req.params.id);
+    res.json({ message: 'History entry deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

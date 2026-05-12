@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, X, Edit2 } from 'lucide-react';
+import { Package, Plus, X, Edit2, Trash2 } from 'lucide-react';
 
 export default function Inventory() {
   const [stockItems, setStockItems] = useState([]);
@@ -12,6 +12,9 @@ export default function Inventory() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ isNew: false, isEdit: false, id: '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '' });
   const [suppliersList, setSuppliersList] = useState([]);
+  
+  const [isHistoryEditOpen, setIsHistoryEditOpen] = useState(false);
+  const [historyFormData, setHistoryFormData] = useState({ id: '', addedQty: '', amount: '', supplier: '', notes: '', date: '', previousStock: 0 });
 
   const loadInventory = async () => {
     try {
@@ -161,6 +164,83 @@ export default function Inventory() {
       amount: ''
     });
     setIsModalOpen(true);
+  };
+
+  const handleDeleteHistory = async (historyEntry) => {
+    if (window.confirm('Are you sure you want to delete this entry? This will also revert the stock quantity!')) {
+      try {
+        const itemToUpdate = stockItems.find(i => i.name === historyEntry.itemName);
+        if (itemToUpdate) {
+          const newCurrent = itemToUpdate.current - historyEntry.addedQty;
+          await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/${itemToUpdate._id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ current: Math.max(0, newCurrent) })
+          });
+        }
+        await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/history/${historyEntry._id}`, {
+          method: 'DELETE'
+        });
+        await loadInventory();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleEditHistory = (historyEntry) => {
+    setHistoryFormData({
+      id: historyEntry._id,
+      addedQty: historyEntry.addedQty.toString(),
+      amount: (historyEntry.amount || 0).toString(),
+      supplier: historyEntry.supplier || '',
+      notes: historyEntry.notes || '',
+      date: historyEntry.date,
+      previousStock: historyEntry.previousStock,
+      itemName: historyEntry.itemName
+    });
+    setIsHistoryEditOpen(true);
+  };
+
+  const saveHistoryEdit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const oldEntry = history.find(h => h._id === historyFormData.id);
+      const newQty = parseInt(historyFormData.addedQty) || 0;
+      const diff = newQty - oldEntry.addedQty;
+      
+      const itemToUpdate = stockItems.find(i => i.name === oldEntry.itemName);
+      let newCurrent = itemToUpdate ? itemToUpdate.current : 0;
+      
+      if (itemToUpdate && diff !== 0) {
+        newCurrent = Math.max(0, itemToUpdate.current + diff);
+        await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/${itemToUpdate._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ current: newCurrent })
+        });
+      }
+
+      await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/history/${historyFormData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          addedQty: newQty,
+          amount: parseFloat(historyFormData.amount) || 0,
+          supplier: historyFormData.supplier,
+          notes: historyFormData.notes,
+          newStock: oldEntry.previousStock + newQty
+        })
+      });
+      await loadInventory();
+      setIsHistoryEditOpen(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredItems = stockItems.filter(item => {
@@ -313,21 +393,30 @@ export default function Inventory() {
                       <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount (₹)</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Supplier</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes / Ref</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-200">
                     {history.filter(h => h.itemName === selectedItem.name).length === 0 ? (
-                      <tr><td colSpan="5" className="px-6 py-12 text-center text-slate-500">No purchase history found for this item.</td></tr>
+                      <tr><td colSpan="6" className="px-6 py-12 text-center text-slate-500">No purchase history found for this item.</td></tr>
                     ) : (
                       history.filter(h => h.itemName === selectedItem.name).map(h => (
-                        <tr key={h.id} className="hover:bg-slate-50">
+                        <tr key={h._id} className="hover:bg-slate-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{h.date}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-emerald-600">
-                            +{h.addedQty} <span className="text-[10px] text-slate-400 font-normal block">({h.previousStock} → {h.newStock})</span>
+                            {h.addedQty >= 0 ? '+' : ''}{h.addedQty} <span className="text-[10px] text-slate-400 font-normal block">({h.previousStock} → {h.newStock})</span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-slate-700">₹{h.amount || 0}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{h.supplier || '-'}</td>
                           <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">{h.notes || '-'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button onClick={() => handleEditHistory(h)} className="text-blue-500 hover:text-blue-700 mr-2 transition-colors">
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDeleteHistory(h)} className="text-red-500 hover:text-red-700 transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
                         </tr>
                       ))
                     )}
@@ -550,6 +639,89 @@ export default function Inventory() {
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* History Edit Modal */}
+      {isHistoryEditOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden relative">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-800">Edit History Entry</h3>
+              <button onClick={() => setIsHistoryEditOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={saveHistoryEdit} className="p-4 space-y-4">
+              <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
+                Editing this entry will automatically adjust the current total stock to maintain balance.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Quantity (Change)</label>
+                  <input 
+                    type="number" 
+                    required
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                    value={historyFormData.addedQty}
+                    onChange={(e) => setHistoryFormData({...historyFormData, addedQty: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount (₹)</label>
+                  <input 
+                    type="number" 
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                    value={historyFormData.amount}
+                    onChange={(e) => setHistoryFormData({...historyFormData, amount: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Supplier / Type</label>
+                <input 
+                  type="text" 
+                  className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                  value={historyFormData.supplier}
+                  onChange={(e) => setHistoryFormData({...historyFormData, supplier: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Remarks / Notes</label>
+                <input 
+                  type="text" 
+                  className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                  value={historyFormData.notes}
+                  onChange={(e) => setHistoryFormData({...historyFormData, notes: e.target.value})}
+                />
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setIsHistoryEditOpen(false)}
+                  className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className={`flex-1 py-2 rounded-lg transition-all font-medium text-sm flex items-center justify-center ${
+                    isSubmitting 
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-aquro-600 to-aquro-500 text-white hover:shadow-md'
+                  }`}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
