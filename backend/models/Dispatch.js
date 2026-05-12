@@ -11,7 +11,8 @@ const dispatchSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true },
   vehicle: { type: String },
   driver: { type: String },
-  status: { type: String, default: 'In Transit' }
+  status: { type: String, default: 'In Transit' },
+  isSample: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Dispatch', dispatchSchema);

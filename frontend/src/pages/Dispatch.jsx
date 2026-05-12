@@ -10,7 +10,7 @@ export default function Dispatch() {
   const [searchQuery, setSearchQuery] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
-  const [formData, setFormData] = useState({ id: null, challan: '', date: new Date().toISOString().split('T')[0], customer: '', size: '1L', boxes: '', rate: '', qty: 0, vehicle: '', driver: 'Amit dhariwal', status: 'Delivered' });
+  const [formData, setFormData] = useState({ id: null, challan: '', date: new Date().toISOString().split('T')[0], customer: '', size: '1L', boxes: '', rate: '', qty: 0, vehicle: '', driver: 'Amit dhariwal', status: 'Delivered', isSample: false });
 
   const getPiecesPerBox = (size) => {
     switch(size) {
@@ -70,7 +70,8 @@ export default function Dispatch() {
         qty: 0, 
         vehicle: '', 
         driver: 'Amit dhariwal', 
-        status: 'Delivered' 
+        status: 'Delivered',
+        isSample: false
       });
     }
     setIsModalOpen(true);
@@ -85,7 +86,7 @@ export default function Dispatch() {
     const payload = {
       ...formData,
       status: 'Delivered', // Force delivered
-      boxes: bx, rate: rt, qty: q, totalAmount: bx * rt
+      boxes: bx, rate: rt, qty: q, totalAmount: formData.isSample ? 0 : bx * rt
     };
 
     try {
@@ -182,14 +183,21 @@ export default function Dispatch() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-800">{item.customer}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                         <span className="font-bold text-slate-800">{item.boxes} Boxes</span> <span className="text-xs text-slate-400">({item.qty} pcs)</span>
-                        <div className="text-xs text-slate-500 mt-0.5">{item.size} • ₹{item.rate}/box</div>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {item.size} • ₹{item.rate}/box 
+                          {item.isSample && <span className="ml-1 text-orange-500 font-bold">(Sample)</span>}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                         <div>{item.vehicle}</div>
                         <div className="text-xs text-slate-400">{item.driver}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className="font-bold text-slate-700 block mb-1">₹{item.totalAmount || 0}</span>
+                        {item.isSample ? (
+                          <span className="font-bold text-slate-400 line-through block mb-1">₹{item.boxes * item.rate}</span>
+                        ) : (
+                          <span className="font-bold text-slate-700 block mb-1">₹{item.totalAmount || 0}</span>
+                        )}
                         <span className="px-2 inline-flex text-[10px] leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
                           Delivered
                         </span>
@@ -315,13 +323,29 @@ export default function Dispatch() {
 
               {/* Total Calculation Preview */}
               {(formData.boxes && formData.rate) ? (
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex justify-between items-center">
-                  <div className="text-sm text-slate-600">
-                    Total: <span className="font-semibold text-slate-800">{parseInt(formData.boxes) * getPiecesPerBox(formData.size)} pcs</span>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-slate-600">
+                      Total: <span className="font-semibold text-slate-800">{parseInt(formData.boxes) * getPiecesPerBox(formData.size)} pcs</span>
+                    </div>
+                    <div className="text-sm text-slate-600">
+                      Total Amount: 
+                      {formData.isSample ? (
+                        <span className="text-lg font-bold text-slate-400 line-through ml-1">₹{parseFloat(formData.boxes) * parseFloat(formData.rate)}</span>
+                      ) : (
+                        <span className="text-lg font-bold text-aquro-600 ml-1">₹{parseFloat(formData.boxes) * parseFloat(formData.rate)}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-sm text-slate-600">
-                    Total Amount: <span className="text-lg font-bold text-aquro-600">₹{parseFloat(formData.boxes) * parseFloat(formData.rate)}</span>
-                  </div>
+                  <label className="flex items-center gap-2 mt-2 cursor-pointer border-t border-slate-200 pt-2">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 text-aquro-600 rounded border-slate-300 focus:ring-aquro-500"
+                      checked={formData.isSample}
+                      onChange={(e) => setFormData({...formData, isSample: e.target.checked})}
+                    />
+                    <span className="text-sm font-medium text-orange-600">Mark as Sample Box (Amount will be 0)</span>
+                  </label>
                 </div>
               ) : null}
 

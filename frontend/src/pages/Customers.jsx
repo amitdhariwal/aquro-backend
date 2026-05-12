@@ -234,7 +234,7 @@ export default function Customers() {
               ${customerDispatches.map(d => `
                 <tr>
                   <td>${d.date}</td>
-                  <td>${d.boxes} Boxes of ${d.size} (@ Rs.${d.rate}/box)</td>
+                  <td>${d.boxes} Boxes of ${d.size} ${d.isSample ? '<strong style="color:#f97316;">[SAMPLE]</strong>' : `(@ Rs.${d.rate}/box)`}</td>
                   <td class="text-right">${d.totalAmount || 0}</td>
                 </tr>
               `).join('')}
@@ -723,7 +723,10 @@ export default function Customers() {
                                 <div className="font-medium text-slate-800">{d.date}</div>
                               </td>
                               <td className="px-4 py-3 text-sm text-slate-600">
-                                <div>{d.boxes} Boxes ({d.size})</div>
+                                <div>
+                                  {d.boxes} Boxes ({d.size}) 
+                                  {d.isSample && <span className="ml-1 text-orange-500 font-bold text-xs">[SAMPLE]</span>}
+                                </div>
                                 <div className="text-[10px] text-slate-400">₹{d.rate}/box</div>
                               </td>
                               <td className="px-4 py-3 text-sm text-right font-bold text-slate-700">₹{d.totalAmount || 0}</td>
