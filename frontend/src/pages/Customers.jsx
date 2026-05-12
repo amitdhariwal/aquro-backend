@@ -13,6 +13,8 @@ export default function Customers() {
   const [formData, setFormData] = useState(getInitialForm());
   const [previewImage, setPreviewImage] = useState(null);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
+  const [editPaymentForm, setEditPaymentForm] = useState({ id: '', date: '', amount: '', note: '' });
 
   const blocks = ['Amroha', 'Joya', 'Hasanpur', 'Gajraula', 'Dhanora', 'Naugawan Sadat'];
   const categories = ['Shop', 'Restaurant', 'Banquet Hall', 'Hotel', 'College', 'University', 'Corporate Office', 'Other'];
@@ -113,6 +115,42 @@ export default function Customers() {
     } catch (error) {
       console.error(error);
       alert('Failed to add payment');
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId) => {
+    if (window.confirm('Are you sure you want to delete this payment entry?')) {
+      try {
+        await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/customers/payments/${paymentId}`, {
+          method: 'DELETE'
+        });
+        fetchCustomerPayments(selectedCustomer.id);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleEditPaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmittingPayment) return;
+    setIsSubmittingPayment(true);
+    try {
+      await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/customers/payments/${editPaymentForm.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseFloat(editPaymentForm.amount) || 0,
+          note: editPaymentForm.note,
+          date: editPaymentForm.date
+        })
+      });
+      fetchCustomerPayments(selectedCustomer.id);
+      setEditPaymentModalOpen(false);
+    } catch (err) {
+      console.error(err);
     } finally {
       setIsSubmittingPayment(false);
     }
@@ -742,6 +780,7 @@ export default function Customers() {
                         <tr>
                           <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Date/Note</th>
                           <th className="px-4 py-2 text-right text-xs font-medium text-slate-500">Amount Cleared</th>
+                          <th className="px-4 py-2 text-right text-xs font-medium text-slate-500">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -757,6 +796,20 @@ export default function Customers() {
                               <td className="px-4 py-3 text-sm text-right font-bold text-emerald-600 flex items-center justify-end gap-1">
                                 <ArrowDownRight className="w-3 h-3" /> ₹{p.amount || 0}
                               </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium w-20">
+                                <button 
+                                  onClick={() => {
+                                    setEditPaymentForm({ id: p._id, amount: p.amount, note: p.note, date: p.date });
+                                    setEditPaymentModalOpen(true);
+                                  }}
+                                  className="text-blue-500 hover:text-blue-700 mr-2 transition-colors"
+                                >
+                                  <Edit2 className="w-3 h-3 inline" />
+                                </button>
+                                <button onClick={() => handleDeletePayment(p._id)} className="text-red-500 hover:text-red-700 transition-colors">
+                                  <Trash2 className="w-3 h-3 inline" />
+                                </button>
+                              </td>
                             </tr>
                           ))
                         )}
@@ -766,6 +819,35 @@ export default function Customers() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Payment Modal */}
+      {editPaymentModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="font-bold text-slate-800">Edit Payment Entry</h3>
+              <button onClick={() => setEditPaymentModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleEditPaymentSubmit} className="p-4 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Date</label>
+                <input type="text" className="w-full p-2 border border-slate-200 rounded text-sm" value={editPaymentForm.date} onChange={e => setEditPaymentForm({...editPaymentForm, date: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Amount (₹)</label>
+                <input type="number" required className="w-full p-2 border border-slate-200 rounded text-sm" value={editPaymentForm.amount} onChange={e => setEditPaymentForm({...editPaymentForm, amount: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Remarks / Note</label>
+                <input type="text" className="w-full p-2 border border-slate-200 rounded text-sm" value={editPaymentForm.note} onChange={e => setEditPaymentForm({...editPaymentForm, note: e.target.value})} />
+              </div>
+              <button type="submit" disabled={isSubmittingPayment} className={`w-full py-2 text-white rounded font-medium text-sm transition-colors ${isSubmittingPayment ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                {isSubmittingPayment ? 'Saving...' : 'Save Changes'}
+              </button>
+            </form>
           </div>
         </div>
       )}

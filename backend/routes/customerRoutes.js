@@ -118,4 +118,24 @@ router.post('/:id/payments', async (req, res) => {
   }
 });
 
+// PUT update payment
+router.put('/payments/:paymentId', async (req, res) => {
+  try {
+    const updated = await CustomerPayment.findByIdAndUpdate(req.params.paymentId, req.body, { new: true });
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// DELETE payment
+router.delete('/payments/:paymentId', async (req, res) => {
+  try {
+    await CustomerPayment.findByIdAndDelete(req.params.paymentId);
+    res.json({ message: 'Payment deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

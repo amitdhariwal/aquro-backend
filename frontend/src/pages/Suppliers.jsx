@@ -10,6 +10,9 @@ export default function Suppliers() {
   const [paymentForm, setPaymentForm] = useState({ date: '', amount: '', note: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState(getInitialForm());
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
+  const [editPaymentForm, setEditPaymentForm] = useState({ id: '', date: '', amount: '', note: '' });
 
   const categories = ['Plastic Vendor', 'Label Printer', 'Box Manufacturer', 'Chemicals & RO Parts', 'Other'];
 
@@ -68,7 +71,7 @@ export default function Suppliers() {
 
   const fetchSupplierPayments = async (supplierId) => {
     try {
-      const resPay = await fetch(`/api/suppliers/${supplierId}/payments`);
+      const resPay = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/suppliers/${supplierId}/payments`);
       if (resPay.ok) {
         const allPayments = await resPay.json();
         setSupplierPayments(allPayments);
@@ -83,6 +86,8 @@ export default function Suppliers() {
 
   const handleAddPayment = async (e) => {
     e.preventDefault();
+    if (isSubmittingPayment) return;
+    setIsSubmittingPayment(true);
     const entry = {
       date: new Date(paymentForm.date).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric', year: 'numeric' }),
       type: 'PAYMENT',
@@ -91,7 +96,7 @@ export default function Suppliers() {
     };
 
     try {
-      const response = await fetch(`/api/suppliers/${selectedSupplier.id}/payments`, {
+      const response = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/suppliers/${selectedSupplier.id}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry)
@@ -103,6 +108,44 @@ export default function Suppliers() {
     } catch (error) {
       console.error(error);
       alert('Failed to add payment');
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId) => {
+    if (window.confirm('Are you sure you want to delete this payment entry?')) {
+      try {
+        await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/suppliers/payments/${paymentId}`, {
+          method: 'DELETE'
+        });
+        fetchSupplierPayments(selectedSupplier.id);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleEditPaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmittingPayment) return;
+    setIsSubmittingPayment(true);
+    try {
+      await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/suppliers/payments/${editPaymentForm.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseFloat(editPaymentForm.amount) || 0,
+          note: editPaymentForm.note,
+          date: editPaymentForm.date
+        })
+      });
+      fetchSupplierPayments(selectedSupplier.id);
+      setEditPaymentModalOpen(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmittingPayment(false);
     }
   };
 
@@ -215,7 +258,7 @@ export default function Suppliers() {
     
     try {
       const url = isEdit 
-        ? `/api/suppliers/${formData.id}` 
+        ? (import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/suppliers/${formData.id}` 
         : (import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/suppliers';
       const method = isEdit ? 'PUT' : 'POST';
 
@@ -242,7 +285,7 @@ export default function Suppliers() {
   const handleDelete = async (id) => {
     if(window.confirm('Are you sure you want to delete this supplier?')) {
       try {
-        const response = await fetch(`/api/suppliers/${id}`, { method: 'DELETE' });
+        const response = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/suppliers/${id}`, { method: 'DELETE' });
         if (response.ok) {
           fetchSuppliers();
         }
@@ -485,6 +528,7 @@ export default function Suppliers() {
                           <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Details</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Debit (Owed)</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Credit (Paid)</th>
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-slate-100">
@@ -517,6 +561,24 @@ export default function Suppliers() {
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-bold text-emerald-600">
                                 {!item.isPurchase ? `₹${(item.amount || 0).toLocaleString()}` : '-'}
                               </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                {!item.isPurchase && (
+                                  <>
+                                    <button 
+                                      onClick={() => {
+                                        setEditPaymentForm({ id: item._id, amount: item.amount, note: item.note, date: item.date });
+                                        setEditPaymentModalOpen(true);
+                                      }}
+                                      className="text-blue-500 hover:text-blue-700 mr-2 transition-colors"
+                                    >
+                                      <Edit2 className="w-4 h-4 inline" />
+                                    </button>
+                                    <button onClick={() => handleDeletePayment(item._id)} className="text-red-500 hover:text-red-700 transition-colors">
+                                      <Trash2 className="w-4 h-4 inline" />
+                                    </button>
+                                  </>
+                                )}
+                              </td>
                             </tr>
                         ))}
                       </tbody>
@@ -543,13 +605,42 @@ export default function Suppliers() {
                       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Reference / Note</label>
                       <input type="text" className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500" placeholder="e.g. Bank Transfer Ref / Cash" value={paymentForm.note} onChange={e => setPaymentForm({...paymentForm, note: e.target.value})} />
                     </div>
-                    <button type="submit" className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold shadow-sm shadow-emerald-500/30 transition-all text-sm">
-                      Submit Payment Entry
+                    <button type="submit" disabled={isSubmittingPayment} className={`w-full py-3 text-white rounded-lg font-bold shadow-sm transition-all text-sm ${isSubmittingPayment ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30'}`}>
+                      {isSubmittingPayment ? 'Adding...' : 'Submit Payment Entry'}
                     </button>
                   </form>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Payment Modal */}
+      {editPaymentModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="font-bold text-slate-800">Edit Payment Entry</h3>
+              <button onClick={() => setEditPaymentModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleEditPaymentSubmit} className="p-4 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Date</label>
+                <input type="text" className="w-full p-2 border border-slate-200 rounded text-sm" value={editPaymentForm.date} onChange={e => setEditPaymentForm({...editPaymentForm, date: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Amount (₹)</label>
+                <input type="number" required className="w-full p-2 border border-slate-200 rounded text-sm" value={editPaymentForm.amount} onChange={e => setEditPaymentForm({...editPaymentForm, amount: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Remarks / Note</label>
+                <input type="text" className="w-full p-2 border border-slate-200 rounded text-sm" value={editPaymentForm.note} onChange={e => setEditPaymentForm({...editPaymentForm, note: e.target.value})} />
+              </div>
+              <button type="submit" disabled={isSubmittingPayment} className={`w-full py-2 text-white rounded font-medium text-sm transition-colors ${isSubmittingPayment ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                {isSubmittingPayment ? 'Saving...' : 'Save Changes'}
+              </button>
+            </form>
           </div>
         </div>
       )}
