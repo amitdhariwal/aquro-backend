@@ -27,15 +27,23 @@ export default function ReadyStock() {
       }
 
       const sizes = ['200ml', '500ml', '1L', '2L'];
+      const boxMultipliers = { '200ml': 48, '500ml': 24, '1L': 12, '2L': 6 };
+      
       const newData = sizes.map(size => {
         const p = produced[size];
         const d = dispatched[size];
         const avail = p - d;
+        const boxes = Math.floor(avail / boxMultipliers[size]);
+        const remainingPcs = avail % boxMultipliers[size];
+        
         return {
           size,
           produced: p,
           dispatched: d,
           available: avail,
+          boxes,
+          remainingPcs,
+          multiplier: boxMultipliers[size],
           status: avail < 1000 ? 'Low Stock' : 'In Stock'
         };
       });
@@ -102,9 +110,14 @@ export default function ReadyStock() {
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-xs font-medium text-slate-500 mb-1">Ready Available</p>
-                    <h4 className={`text-2xl font-bold ${item.available < 1000 ? 'text-orange-600' : 'text-aquro-600'}`}>
-                      {item.available.toLocaleString()}
-                    </h4>
+                    <div className="flex items-baseline gap-2">
+                      <h4 className={`text-2xl font-bold ${item.available < 1000 ? 'text-orange-600' : 'text-aquro-600'}`}>
+                        {item.available.toLocaleString()} pcs
+                      </h4>
+                      <span className="text-sm font-medium text-slate-500">
+                        (~{item.boxes} Boxes)
+                      </span>
+                    </div>
                   </div>
                   {item.available < 1000 && (
                     <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
@@ -150,7 +163,8 @@ export default function ReadyStock() {
                     {item.dispatched.toLocaleString()} pcs
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-slate-800">
-                    {item.available.toLocaleString()} pcs
+                    <div>{item.available.toLocaleString()} pcs</div>
+                    <div className="text-xs text-slate-500 font-medium mt-0.5">{item.boxes} Boxes {item.remainingPcs > 0 ? `+ ${item.remainingPcs} pcs` : ''}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
