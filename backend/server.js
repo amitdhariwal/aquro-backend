@@ -16,9 +16,10 @@ const supplierRoutes = require('./routes/supplierRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 const dispatchRoutes = require('./routes/dispatchRoutes');
 const waterQualityRoutes = require('./routes/waterQualityRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 // API Routes
-// app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/production', productionRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/customers', customerRoutes);

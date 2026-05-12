@@ -21,6 +21,10 @@ window.fetch = async function(...args) {
   const [resource, config] = args;
   
   if (role === 'viewer' && config && ['POST', 'PUT', 'DELETE'].includes(config.method?.toUpperCase())) {
+    // Allow users to change their own password
+    if (typeof resource === 'string' && resource.includes('/api/auth/change-password')) {
+      return originalFetch.apply(this, args);
+    }
     alert("Access Denied: Viewers cannot add, edit, or delete records. Only Akash Gupta (Admin) can make changes.");
     return Promise.reject(new Error("Viewer access denied"));
   }

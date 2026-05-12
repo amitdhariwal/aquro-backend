@@ -8,26 +8,28 @@ export default function Login({ setIsAuthenticated }) {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     
-    const users = {
-      'akash gupta': { pass: 'akash123', role: 'admin' },
-      'amit': { pass: 'amit123', role: 'viewer' },
-      'nitin': { pass: 'nitin123', role: 'viewer' },
-      'ritik': { pass: 'ritik123', role: 'viewer' },
-      'aquro': { pass: '1234', role: 'admin' } // Keep the default one just in case
-    };
-
-    const user = users[username.toLowerCase().trim()];
-
-    if (user && user.pass === password) {
-      localStorage.setItem('userRole', user.role);
-      setIsAuthenticated(true);
-      navigate('/dashboard');
-    } else {
-      setError('Invalid username or password');
+    try {
+      const res = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('userRole', data.role);
+        localStorage.setItem('username', data.username);
+        setIsAuthenticated(true);
+        navigate('/dashboard');
+      } else {
+        setError(data.message || 'Invalid username or password');
+      }
+    } catch (err) {
+      setError('Server error. Please try again.');
     }
   };
 
