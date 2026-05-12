@@ -112,7 +112,7 @@ export default function Dispatch() {
   const handleDelete = async (id, challan) => {
     if (window.confirm(`Are you sure you want to delete challan ${challan}?`)) {
       try {
-        const res = await fetch(`/api/dispatches/${id}`, { method: 'DELETE' });
+        const res = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/dispatches/${id}`, { method: 'DELETE' });
         if (res.ok) {
           fetchDispatches();
         }
