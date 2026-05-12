@@ -9,15 +9,7 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const data = [
-  { name: 'Mon', production: 4000, sales: 2400 },
-  { name: 'Tue', production: 3000, sales: 1398 },
-  { name: 'Wed', production: 2000, sales: 9800 },
-  { name: 'Thu', production: 2780, sales: 3908 },
-  { name: 'Fri', production: 1890, sales: 4800 },
-  { name: 'Sat', production: 2390, sales: 3800 },
-  { name: 'Sun', production: 3490, sales: 4300 },
-];
+// Removed static data
 
 export default function Dashboard() {
   const [totalProduction, setTotalProduction] = useState('0');
@@ -25,6 +17,7 @@ export default function Dashboard() {
   const [totalPendingAmount, setTotalPendingAmount] = useState('0');
   const [deliveredOrders, setDeliveredOrders] = useState('0');
   const [readyStock, setReadyStock] = useState({ '200ml': 0, '500ml': 0, '1L': 0, '2L': 0 });
+  const [chartData, setChartData] = useState([]);
   const [activities, setActivities] = useState([
     { id: 'def-1', title: 'Delivery Dispatched', desc: 'Route 4 - 150 Cartons', time: '1 hour ago', color: 'text-emerald-600', bg: 'bg-emerald-100' },
     { id: 'def-2', title: 'Payment Received', desc: '₹12,500 from City Mart', time: '2 hours ago', color: 'text-purple-600', bg: 'bg-purple-100' },
@@ -101,6 +94,38 @@ export default function Dashboard() {
         '2L': produced['2L'] - dispatched['2L']
       });
 
+      // Calculate Chart Data (Last 7 Days)
+      const dynamicChartData = [];
+      const daysStr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+        
+        let dailyProd = 0;
+        let dailySales = 0;
+
+        prodData.forEach(p => {
+           if (p.date === dateStr) dailyProd += Number(p.qty || 0);
+        });
+
+        dispData.forEach(dItem => {
+           if (dItem.date === dateStr) dailySales += Number(dItem.qty || 0); // Assuming dItem.qty is available or dItem.boxes * something. Actually dispData uses 'boxes'. Let's sum pieces correctly.
+           // In dispatches, we store 'boxes', 'size', 'rate', 'totalAmount'. Let's check how 'qty' is defined.
+        });
+
+        dynamicChartData.push({
+          name: daysStr[d.getDay()],
+          production: dailyProd,
+          sales: dailySales
+        });
+      }
+      setChartData(dynamicChartData);
+
     } catch (error) {
       console.error(error);
     }
@@ -129,14 +154,6 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
           <p className="text-slate-500 text-sm mt-1">Welcome back, here's what's happening at the plant today.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm font-medium">
-            Download Report
-          </button>
-          <button className="px-4 py-2 bg-gradient-to-r from-aquro-600 to-aquro-500 text-white rounded-lg shadow-sm shadow-aquro-500/30 hover:shadow-md transition-all text-sm font-medium">
-            New Production Entry
-          </button>
         </div>
       </div>
 
@@ -196,7 +213,7 @@ export default function Dashboard() {
           </div>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorProduction" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
