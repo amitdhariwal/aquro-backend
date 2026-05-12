@@ -144,12 +144,12 @@ export default function Dispatch() {
     }
     
     const tableData = filtered.map(d => [
-      d.date, d.challan, d.customer, `${d.boxes} Boxes (${d.size})`, `Rs.${d.totalAmount || 0}`, d.driver || ''
+      d.date, d.customer, `${d.boxes} Boxes (${d.size})`, `Rs.${d.totalAmount || 0}`, d.driver || ''
     ]);
 
     autoTable(doc, {
       startY: (startDate || endDate) ? 26 : 22,
-      head: [['Date', 'Challan', 'Customer', 'Items', 'Total Amt', 'Driver']],
+      head: [['Date', 'Customer', 'Items', 'Total Amt', 'Driver']],
       body: tableData,
     });
     doc.save('Dispatch_Report.pdf');
@@ -158,7 +158,6 @@ export default function Dispatch() {
   const exportToExcel = () => {
     const tableData = filtered.map(d => ({
       Date: d.date,
-      Challan: d.challan,
       Customer: d.customer,
       Size: d.size,
       Boxes: d.boxes,
