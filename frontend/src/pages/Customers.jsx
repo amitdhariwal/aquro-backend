@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, MapPin, Phone, User, Store, Image as ImageIcon, X, Edit2, Trash2, Package, Clock, ArrowDownRight, ArrowUpRight, Truck, Download } from 'lucide-react';
+import { Plus, Search, MapPin, Phone, User, Store, Image as ImageIcon, X, Edit2, Trash2, Package, Clock, ArrowDownRight, ArrowUpRight, Truck, Download, FileText, FileSpreadsheet, AlertTriangle, AlertCircle } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -10,11 +13,15 @@ export default function Customers() {
   const [paymentForm, setPaymentForm] = useState({ date: '', type: 'PAYMENT', bottles: '', amount: '', note: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
+  const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [formData, setFormData] = useState(getInitialForm());
   const [previewImage, setPreviewImage] = useState(null);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
   const [editPaymentForm, setEditPaymentForm] = useState({ id: '', date: '', amount: '', note: '' });
+
+  const [allDispatches, setAllDispatches] = useState([]);
+  const [allPayments, setAllPayments] = useState([]);
 
   const blocks = ['Amroha', 'Joya', 'Hasanpur', 'Gajraula', 'Dhanora', 'Naugawan Sadat'];
   const categories = ['Shop', 'Restaurant', 'Banquet Hall', 'Hotel', 'College', 'University', 'Corporate Office', 'Other'];
@@ -40,14 +47,22 @@ export default function Customers() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers');
-      if (response.ok) {
-        const data = await response.json();
+      const [resCust, resDisp, resPay] = await Promise.all([
+        fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers'),
+        fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/dispatches'),
+        fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers/payments/all')
+      ]);
+
+      if (resDisp.ok) setAllDispatches(await resDisp.json());
+      if (resPay.ok) setAllPayments(await resPay.json());
+      
+      if (resCust.ok) {
+        const data = await resCust.json();
         const formattedData = data.map(item => ({ ...item, id: item._id }));
         setCustomers(formattedData);
       }
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      console.error('Error fetching data:', error);
     }
   };
 
@@ -148,6 +163,7 @@ export default function Customers() {
         })
       });
       fetchCustomerPayments(selectedCustomer.id);
+      fetchCustomers(); // Refresh global stats
       setEditPaymentModalOpen(false);
     } catch (err) {
       console.error(err);
@@ -341,13 +357,81 @@ export default function Customers() {
     }
   };
 
-  const filtered = customers.filter(c => {
+  const customersWithStats = customers.map(c => {
+    const custDispatches = allDispatches.filter(d => d.customer === c.businessName);
+    const custPayments = allPayments.filter(p => p.customerId === c.id && p.type === 'PAYMENT');
+    const billed = custDispatches.reduce((sum, d) => sum + Number(d.totalAmount || 0), 0);
+    const paid = custPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const pending = billed - paid;
+    return { ...c, billed, paid, pending };
+  });
+
+  const maxPendingAmount = Math.max(...customersWithStats.map(c => c.pending), 0);
+  const totalReceived = customersWithStats.reduce((sum, c) => sum + c.paid, 0);
+  const totalPending = customersWithStats.reduce((sum, c) => sum + c.pending, 0);
+
+  const filtered = customersWithStats.filter(c => {
     const matchesSearch = c.businessName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           c.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           c.mobile.includes(searchQuery);
     const matchesCategory = filterCategory === 'All' || (c.category || 'Shop') === filterCategory;
-    return matchesSearch && matchesCategory;
+    const matchesPending = showPendingOnly ? c.pending > 0 : true;
+    return matchesSearch && matchesCategory && matchesPending;
   });
+
+  const exportListToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('AQURO - Customer Ledger Summary', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Total Customers: ${filtered.length}`, 14, 22);
+
+    const tableData = filtered.map(c => [
+      c.businessName, c.mobile, `Rs.${c.billed}`, `Rs.${c.paid}`, `Rs.${c.pending}`
+    ]);
+
+    const fBilled = filtered.reduce((s, c) => s + c.billed, 0);
+    const fPaid = filtered.reduce((s, c) => s + c.paid, 0);
+    const fPending = filtered.reduce((s, c) => s + c.pending, 0);
+    tableData.push(['TOTAL', '', `Rs.${fBilled}`, `Rs.${fPaid}`, `Rs.${fPending}`]);
+
+    autoTable(doc, {
+      startY: 26,
+      head: [['Business Name', 'Mobile', 'Total Billed', 'Total Paid', 'Pending']],
+      body: tableData,
+    });
+    doc.save('Customer_Ledger_List.pdf');
+  };
+
+  const exportListToExcel = () => {
+    const tableData = filtered.map(c => ({
+      "Business Name": c.businessName,
+      "Owner Name": c.ownerName,
+      "Mobile": c.mobile,
+      "Location": `${c.address}, ${c.district}`,
+      "Total Billed": c.billed,
+      "Total Paid": c.paid,
+      "Pending Balance": c.pending
+    }));
+
+    const fBilled = filtered.reduce((s, c) => s + c.billed, 0);
+    const fPaid = filtered.reduce((s, c) => s + c.paid, 0);
+    const fPending = filtered.reduce((s, c) => s + c.pending, 0);
+
+    tableData.push({
+      "Business Name": "TOTAL",
+      "Owner Name": "",
+      "Mobile": "",
+      "Location": "",
+      "Total Billed": fBilled,
+      "Total Paid": fPaid,
+      "Pending Balance": fPending
+    });
+
+    const ws = XLSX.utils.json_to_sheet(tableData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Customers");
+    XLSX.writeFile(wb, "Customer_Ledger_List.xlsx");
+  };
 
   return (
     <div className="space-y-6">
@@ -370,8 +454,26 @@ export default function Customers() {
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1 max-w-md">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg"><ArrowDownRight className="w-6 h-6" /></div>
+          <div>
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Total Received Money</p>
+            <p className="text-2xl font-bold text-slate-800 mt-1">₹{totalReceived.toLocaleString()}</p>
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 border-l-4 border-l-orange-500">
+          <div className="p-3 bg-orange-50 text-orange-600 rounded-lg"><Clock className="w-6 h-6" /></div>
+          <div>
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-wide">Total Pending Balance</p>
+            <p className="text-2xl font-bold text-slate-800 mt-1">₹{totalPending.toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="flex-1 flex flex-col sm:flex-row gap-4 w-full">
+          <div className="relative flex-1 max-w-md">
           <input 
             type="text" 
             placeholder="Search by business, owner or mobile..." 
@@ -393,6 +495,26 @@ export default function Customers() {
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
           </div>
+        </div>
+        
+        <label className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer shadow-sm hover:bg-slate-50 transition-colors whitespace-nowrap">
+          <input 
+            type="checkbox" 
+            className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500"
+            checked={showPendingOnly}
+            onChange={(e) => setShowPendingOnly(e.target.checked)}
+          />
+          <span className="text-sm font-medium text-slate-700">Pending Only</span>
+        </label>
+        
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={exportListToPDF} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+            <FileText className="w-4 h-4 text-red-500" /> PDF
+          </button>
+          <button onClick={exportListToExcel} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+            <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> Excel
+          </button>
         </div>
       </div>
 
@@ -429,7 +551,14 @@ export default function Customers() {
                           )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-bold text-slate-900">{customer.businessName}</div>
+                          <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            {customer.businessName}
+                            {customer.pending === maxPendingAmount && customer.pending > 0 && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200" title="Highest Pending Alert">
+                                <AlertCircle className="w-3 h-3" /> Highest Pending
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-aquro-600 bg-aquro-50 inline-block px-2 py-0.5 rounded mt-1 border border-aquro-100 font-medium">
                             {customer.category || 'Shop'}
                           </div>
@@ -443,6 +572,7 @@ export default function Customers() {
                       <div className="flex items-center text-sm text-slate-500">
                         <Phone className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> {customer.mobile}
                       </div>
+                      <div className="text-xs font-bold mt-1 text-orange-600">Pending: ₹{customer.pending}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-start text-sm text-slate-600 max-w-xs">
