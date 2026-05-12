@@ -77,7 +77,7 @@ export default function Inventory() {
       if (formData.isEdit) {
         const itemToUpdate = stockItems.find(i => i.id === formData.id);
         if (itemToUpdate) {
-          await fetch(`/api/inventory/${itemToUpdate._id}`, {
+          await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/${itemToUpdate._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: formData.name, current: qtyNum, minimum: parseInt(formData.minimum) || 0 })
@@ -104,7 +104,7 @@ export default function Inventory() {
         const itemToUpdate = stockItems.find(i => i.id === formData.id);
         if (itemToUpdate) {
           const newCurrent = itemToUpdate.current + qtyNum;
-          await fetch(`/api/inventory/${itemToUpdate._id}`, {
+          await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/${itemToUpdate._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ current: newCurrent })
@@ -137,7 +137,7 @@ export default function Inventory() {
   const toggleItemVisibility = async (item) => {
     try {
       const newStatus = !item.isHidden;
-      await fetch(`/api/inventory/${item._id}`, {
+      await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/${item._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isHidden: newStatus })
