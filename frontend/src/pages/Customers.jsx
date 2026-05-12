@@ -225,17 +225,15 @@ export default function Customers() {
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Challan No.</th>
                 <th>Item Details</th>
                 <th class="text-right">Amount (Rs)</th>
               </tr>
             </thead>
             <tbody>
-              ${customerDispatches.length === 0 ? '<tr><td colspan="4" style="text-align:center; color: #94a3b8;">No deliveries found</td></tr>' : ''}
+              ${customerDispatches.length === 0 ? '<tr><td colspan="3" style="text-align:center; color: #94a3b8;">No deliveries found</td></tr>' : ''}
               ${customerDispatches.map(d => `
                 <tr>
                   <td>${d.date}</td>
-                  <td>${d.challan}</td>
                   <td>${d.boxes} Boxes of ${d.size} (@ Rs.${d.rate}/box)</td>
                   <td class="text-right">${d.totalAmount || 0}</td>
                 </tr>
@@ -710,7 +708,7 @@ export default function Customers() {
                     <table className="min-w-full divide-y divide-slate-100">
                       <thead className="bg-slate-50 sticky top-0">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Date/Challan</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Date</th>
                           <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">Item</th>
                           <th className="px-4 py-2 text-right text-xs font-medium text-slate-500">Amount</th>
                         </tr>
@@ -722,8 +720,7 @@ export default function Customers() {
                           customerDispatches.map(d => (
                             <tr key={d.id} className="hover:bg-slate-50">
                               <td className="px-4 py-3 text-sm">
-                                <div className="font-medium text-slate-800">{d.challan}</div>
-                                <div className="text-xs text-slate-500">{d.date}</div>
+                                <div className="font-medium text-slate-800">{d.date}</div>
                               </td>
                               <td className="px-4 py-3 text-sm text-slate-600">
                                 <div>{d.boxes} Boxes ({d.size})</div>
