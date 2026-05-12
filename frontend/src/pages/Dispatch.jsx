@@ -45,9 +45,6 @@ export default function Dispatch() {
       if (res.ok) {
         const data = await res.json();
         setCustomers(data.map(c => ({ id: c._id, name: c.businessName })));
-        if (data.length > 0 && !formData.customer) {
-          setFormData(prev => ({ ...prev, customer: data[0].businessName }));
-        }
       }
     } catch (e) {
       console.error(e);
@@ -66,7 +63,7 @@ export default function Dispatch() {
         id: null, 
         challan: generateChallan(),
         date: new Date().toISOString().split('T')[0], 
-        customer: customers.length > 0 ? customers[0].name : '', 
+        customer: '', 
         size: '1L', 
         boxes: '',
         rate: '',
