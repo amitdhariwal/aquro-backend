@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Filter, Download, Edit2, Trash2, Truck, X, Calendar, FileText, FileSpreadsheet, Package } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 export default function Dispatch() {
@@ -147,7 +147,7 @@ export default function Dispatch() {
       d.date, d.challan, d.customer, `${d.boxes} Boxes (${d.size})`, `Rs.${d.totalAmount || 0}`, d.driver || ''
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: (startDate || endDate) ? 26 : 22,
       head: [['Date', 'Challan', 'Customer', 'Items', 'Total Amt', 'Driver']],
       body: tableData,
