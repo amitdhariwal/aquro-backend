@@ -14,6 +14,8 @@ export default function Customers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [showPendingOnly, setShowPendingOnly] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [formData, setFormData] = useState(getInitialForm());
   const [previewImage, setPreviewImage] = useState(null);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
@@ -357,9 +359,27 @@ export default function Customers() {
     }
   };
 
+  const isDateInRange = (dateStr) => {
+    if (!startDate && !endDate) return true;
+    if (!dateStr) return false;
+    // Assuming date format is YYYY-MM-DD for comparison, or we can use new Date()
+    // The dates are stored as localized string or YYYY-MM-DD. Let's parse securely.
+    // Wait, the dates are currently set using `new Date().toISOString().split('T')[0]` or similar formats like "May 10, 2026"
+    // Let's use simple date parsing.
+    const date = new Date(dateStr);
+    const start = startDate ? new Date(startDate) : new Date('2000-01-01');
+    const end = endDate ? new Date(endDate) : new Date('2100-01-01');
+    
+    // Set hours to 0 to compare just dates
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    
+    return date >= start && date <= end;
+  };
+
   const customersWithStats = customers.map(c => {
-    const custDispatches = allDispatches.filter(d => d.customer === c.businessName);
-    const custPayments = allPayments.filter(p => p.customerId === c.id && p.type === 'PAYMENT');
+    const custDispatches = allDispatches.filter(d => d.customer === c.businessName && isDateInRange(d.date));
+    const custPayments = allPayments.filter(p => p.customerId === c.id && p.type === 'PAYMENT' && isDateInRange(p.date));
     const billed = custDispatches.reduce((sum, d) => sum + Number(d.totalAmount || 0), 0);
     const paid = custPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
     const pending = billed - paid;
@@ -514,6 +534,22 @@ export default function Customers() {
           />
           <span className="text-sm font-medium text-slate-700">Pending Only</span>
         </label>
+        
+        <div className="flex items-center gap-2">
+          <input 
+            type="date" 
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 bg-white"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <span className="text-slate-400 text-sm">to</span>
+          <input 
+            type="date" 
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 bg-white"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </div>
         
         </div>
         <div className="flex items-center gap-2">
