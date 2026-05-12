@@ -38,7 +38,8 @@ export default function Navbar({ setSidebarOpen }) {
   };
 
   return (
-    <header className="h-16 glass-panel border-b border-white/50 flex items-center justify-between px-4 lg:px-8 z-10 sticky top-0">
+    <>
+      <header className="h-16 glass-panel border-b border-white/50 flex items-center justify-between px-4 lg:px-8 z-10 sticky top-0">
       <div className="flex items-center">
         <button
           onClick={() => setSidebarOpen(true)}
@@ -78,6 +79,7 @@ export default function Navbar({ setSidebarOpen }) {
           </div>
         </div>
       </div>
+      </header>
 
       {showPasswordModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -126,6 +128,6 @@ export default function Navbar({ setSidebarOpen }) {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }
