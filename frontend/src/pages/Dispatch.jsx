@@ -8,7 +8,7 @@ export default function Dispatch() {
   const [dispatches, setDispatches] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [formData, setFormData] = useState({ id: null, challan: '', customer: '', size: '1L', boxes: '', rate: '', qty: 0, vehicle: '', driver: '', status: 'In Transit' });
+  const [formData, setFormData] = useState({ id: null, challan: '', date: new Date().toISOString().split('T')[0], customer: '', size: '1L', boxes: '', rate: '', qty: 0, vehicle: '', driver: 'Amit dhariwal', status: 'Delivered' });
 
   const getPiecesPerBox = (size) => {
     switch(size) {
@@ -62,15 +62,16 @@ export default function Dispatch() {
     } else {
       setFormData({ 
         id: null, 
-        challan: generateChallan(), 
+        challan: generateChallan(),
+        date: new Date().toISOString().split('T')[0], 
         customer: customers.length > 0 ? customers[0].name : '', 
         size: '1L', 
         boxes: '',
         rate: '',
         qty: 0, 
         vehicle: '', 
-        driver: '', 
-        status: 'In Transit' 
+        driver: 'Amit dhariwal', 
+        status: 'Delivered' 
       });
     }
     setIsModalOpen(true);
@@ -84,7 +85,7 @@ export default function Dispatch() {
 
     const payload = {
       ...formData,
-      date: formData.id ? dispatches.find(d => d.id === formData.id)?.date : new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }),
+      status: 'Delivered', // Force delivered
       boxes: bx, rate: rt, qty: q, totalAmount: bx * rt
     };
 
@@ -122,8 +123,8 @@ export default function Dispatch() {
   };
 
   const filtered = dispatches.filter(d => 
-    d.challan.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    d.customer.toLowerCase().includes(searchQuery.toLowerCase())
+    d.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (d.driver && d.driver.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -148,7 +149,7 @@ export default function Dispatch() {
             <div className="relative">
               <input 
                 type="text" 
-                placeholder="Search challan or customer..." 
+                placeholder="Search customer or driver..." 
                 className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 bg-white/50 w-64"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -165,7 +166,6 @@ export default function Dispatch() {
               <thead className="bg-slate-50/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Challan No</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Customer</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Item Details</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Vehicle/Driver</th>
@@ -180,8 +180,7 @@ export default function Dispatch() {
                   filtered.map((item) => (
                     <tr key={item.id} className="hover:bg-white/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{item.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{item.challan}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{item.customer}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-800">{item.customer}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                         <span className="font-bold text-slate-800">{item.boxes} Boxes</span> <span className="text-xs text-slate-400">({item.qty} pcs)</span>
                         <div className="text-xs text-slate-500 mt-0.5">{item.size} • ₹{item.rate}/box</div>
@@ -192,12 +191,8 @@ export default function Dispatch() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className="font-bold text-slate-700 block mb-1">₹{item.totalAmount || 0}</span>
-                        <span className={`px-2 inline-flex text-[10px] leading-5 font-semibold rounded-full ${
-                          item.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' :
-                          item.status === 'In Transit' ? 'bg-blue-100 text-blue-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {item.status}
+                        <span className="px-2 inline-flex text-[10px] leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                          Delivered
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -230,39 +225,30 @@ export default function Dispatch() {
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Challan Number</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
                   <input 
-                    type="text" 
+                    type="date" 
                     required
                     className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500 font-medium text-slate-700"
-                    value={formData.challan}
-                    onChange={(e) => setFormData({...formData, challan: e.target.value})}
+                    value={formData.date}
+                    onChange={(e) => setFormData({...formData, date: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                  <select 
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
+                  <input 
+                    type="text"
+                    list="customer-list"
+                    required
+                    placeholder="Search or type customer name..."
                     className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
-                    value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="In Transit">In Transit</option>
-                    <option value="Delivered">Delivered</option>
-                  </select>
+                    value={formData.customer}
+                    onChange={(e) => setFormData({...formData, customer: e.target.value})}
+                  />
+                  <datalist id="customer-list">
+                    {customers.map(c => <option key={c.id} value={c.name} />)}
+                  </datalist>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
-                <select 
-                  required
-                  className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
-                  value={formData.customer}
-                  onChange={(e) => setFormData({...formData, customer: e.target.value})}
-                >
-                  {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -326,13 +312,17 @@ export default function Dispatch() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Driver Name</label>
-                  <input 
-                    type="text" 
+                  <select 
                     required
                     className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
                     value={formData.driver}
                     onChange={(e) => setFormData({...formData, driver: e.target.value})}
-                  />
+                  >
+                    <option value="Amit dhariwal">Amit dhariwal</option>
+                    <option value="Akash gupta">Akash gupta</option>
+                    <option value="Nitin Singh">Nitin Singh</option>
+                    <option value="ritik Dhariwal">ritik Dhariwal</option>
+                  </select>
                 </div>
               </div>
 
