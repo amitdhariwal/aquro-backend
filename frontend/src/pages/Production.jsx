@@ -86,7 +86,7 @@ export default function Production() {
             shouldUpdate = true;
           } else if (entry.label === 'Custom' && (
               (item.isCustomLabel && item.customerName === entry.clientName && item.labelSize === entry.size) ||
-              (!item.isCustomLabel && item.name.toLowerCase().includes((entry.clientName || '').toLowerCase()) && item.name.includes(entry.size))
+              (!item.isCustomLabel && entry.clientName && item.name.toLowerCase().includes(entry.clientName.toLowerCase()) && item.name.includes(entry.size))
           )) {
             newCurrent = Math.max(0, item.current + qtyToAdjust);
             shouldUpdate = true;
@@ -146,7 +146,7 @@ export default function Production() {
             reqLabel = inventory.find(i => i.customId === `inv-std-lbl-${formData.size}`);
           } else {
             reqLabel = inventory.find(i => i.isCustomLabel && i.customerName === formData.clientName && i.labelSize === formData.size);
-            if (!reqLabel) {
+            if (!reqLabel && formData.clientName) {
               reqLabel = inventory.find(i => !i.isCustomLabel && i.name.toLowerCase().includes(formData.clientName.toLowerCase()) && i.name.includes(formData.size));
             }
           }
