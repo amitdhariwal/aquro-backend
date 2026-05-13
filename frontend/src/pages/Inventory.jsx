@@ -151,6 +151,20 @@ export default function Inventory() {
     }
   };
 
+  const handleDeleteItem = async (item) => {
+    if (window.confirm(`Are you sure you want to permanently delete "${item.name}"? All its history will remain but the item itself will be removed.`)) {
+      try {
+        await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/${item._id}`, {
+          method: 'DELETE'
+        });
+        setSelectedItem(null);
+        await loadInventory();
+      } catch (err) {
+        console.error('Error deleting inventory item:', err);
+      }
+    }
+  };
+
   const handleEdit = (item) => {
     setFormData({
       isNew: false,
@@ -323,9 +337,14 @@ export default function Inventory() {
               <div className="flex-1 pr-2">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-slate-500">{item.name}</p>
-                  <button onClick={(e) => { e.stopPropagation(); handleEdit(item); }} className="text-slate-400 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Edit Item">
-                    <Edit2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={(e) => { e.stopPropagation(); handleEdit(item); }} className="text-slate-400 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Edit Item">
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteItem(item); }} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" title="Delete Item">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                   <div className="mt-2 flex items-baseline gap-2">
                     <span className="text-3xl font-bold text-slate-800">{item.current}</span>

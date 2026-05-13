@@ -65,6 +65,16 @@ router.put('/history/:id', async (req, res) => {
   }
 });
 
+// DELETE inventory item
+router.delete('/:id', async (req, res) => {
+  try {
+    await Inventory.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Inventory item deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // DELETE history entry
 router.delete('/history/:id', async (req, res) => {
   try {
