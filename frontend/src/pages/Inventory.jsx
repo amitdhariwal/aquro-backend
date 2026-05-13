@@ -10,7 +10,7 @@ export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ isNew: false, isEdit: false, id: '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '' });
+  const [formData, setFormData] = useState({ isNew: false, isEdit: false, id: '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0] });
   const [suppliersList, setSuppliersList] = useState([]);
   
   const [isHistoryEditOpen, setIsHistoryEditOpen] = useState(false);
@@ -76,6 +76,15 @@ export default function Inventory() {
     setIsSubmitting(true);
     let qtyNum = parseInt(formData.qty) || 0;
     
+    const formatDateTime = (dateString) => {
+      const d = dateString ? new Date(dateString) : new Date();
+      if (dateString) {
+         const now = new Date();
+         d.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+      }
+      return d.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
     try {
       if (formData.isEdit) {
         const itemToUpdate = stockItems.find(i => i.id === formData.id);
@@ -98,7 +107,7 @@ export default function Inventory() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            date: new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric', year: 'numeric' }),
+            date: formatDateTime(formData.date),
             itemName: formData.name, previousStock: 0, addedQty: qtyNum, newStock: qtyNum,
             supplier: formData.supplier, notes: formData.notes, amount: parseFloat(formData.amount) || 0
           })
@@ -117,7 +126,7 @@ export default function Inventory() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              date: new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric', year: 'numeric' }),
+              date: formatDateTime(formData.date),
               itemName: itemToUpdate.name, previousStock: itemToUpdate.current, addedQty: qtyNum, newStock: newCurrent,
               supplier: formData.supplier, notes: formData.notes, amount: parseFloat(formData.amount) || 0
             })
@@ -127,7 +136,7 @@ export default function Inventory() {
       
       await loadInventory();
       setIsModalOpen(false);
-      setFormData({ isNew: false, isEdit: false, id: stockItems[0]?.id || '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '' });
+      setFormData({ isNew: false, isEdit: false, id: stockItems[0]?.id || '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0] });
       setSelectedItem(null);
     } catch (error) {
       console.error('Error saving inventory:', error);
@@ -385,7 +394,7 @@ export default function Inventory() {
               <div className="flex gap-2">
                 <button 
                   onClick={() => {
-                    setFormData({ isNew: false, isEdit: false, id: selectedItem.id, name: selectedItem.name, qty: '', minimum: selectedItem.minimum.toString(), supplier: '', notes: '', amount: '' });
+                    setFormData({ isNew: false, isEdit: false, id: selectedItem.id, name: selectedItem.name, qty: '', minimum: selectedItem.minimum.toString(), supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0] });
                     setIsModalOpen(true);
                   }}
                   className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-aquro-600 to-aquro-500 text-white rounded-lg hover:shadow-md transition-all text-sm font-medium mr-2"
@@ -555,7 +564,17 @@ export default function Inventory() {
               </div>
 
               {!formData.isEdit && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Purchase Date</label>
+                    <input 
+                      type="date" 
+                      required
+                      className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                      value={formData.date}
+                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Purchased From (Supplier)</label>
                     <input 
