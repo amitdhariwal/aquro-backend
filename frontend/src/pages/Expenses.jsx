@@ -40,14 +40,20 @@ export default function Expenses() {
   const fetchExpenses = async () => {
     try {
       const baseUrl = import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com';
-      const [resExp, resPay] = await Promise.all([
+      const [resExp, resPay, resCust] = await Promise.all([
         fetch(`${baseUrl}/api/expenses`),
-        fetch(`${baseUrl}/api/customers/payments/all`)
+        fetch(`${baseUrl}/api/customers/payments/all`),
+        fetch(`${baseUrl}/api/customers`)
       ]);
 
-      if (resPay.ok) {
+      if (resPay.ok && resCust.ok) {
         const payments = await resPay.json();
-        const received = payments.filter(p => p.type === 'PAYMENT').reduce((sum, p) => sum + p.amount, 0);
+        const customers = await resCust.json();
+        const activeCustomerIds = new Set(customers.map(c => c._id));
+        
+        const received = payments
+          .filter(p => p.type === 'PAYMENT' && activeCustomerIds.has(p.customerId))
+          .reduce((sum, p) => sum + Number(p.amount || 0), 0);
         setTotalReceived(received);
       }
 
@@ -57,7 +63,7 @@ export default function Expenses() {
         setExpenses(formattedData);
       }
     } catch (error) {
-      console.error('Error fetching expenses:', error);
+      console.error('Error fetching data:', error);
     }
   };
 
