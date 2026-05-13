@@ -59,21 +59,34 @@ export default function Dashboard() {
       if (resDisp.ok) {
         dispData = await resDisp.json();
         const deliveredCount = dispData.filter(d => d.status === 'Delivered').length;
-        const salesAmount = dispData.reduce((sum, d) => sum + (Number(d.totalAmount) || 0), 0);
-        
         setDeliveredOrders(deliveredCount.toString());
-        setTotalSales(salesAmount.toLocaleString('en-IN'));
 
         try {
           const resPay = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers/payments/all');
-          if (resPay.ok) {
+          const resCust = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers');
+          
+          if (resPay.ok && resCust.ok) {
             const allPayments = await resPay.json();
-            const totalPaid = allPayments.filter(p => p.type === 'PAYMENT').reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-            const pendingAmount = salesAmount - totalPaid;
+            const customersData = await resCust.json();
+
+            let validSalesAmount = 0;
+            let validTotalPaid = 0;
+
+            customersData.forEach(c => {
+              const custName = c.businessName || c.name;
+              const cDisp = dispData.filter(d => d.customer === custName);
+              const cPay = allPayments.filter(p => p.customerId === c._id && p.type === 'PAYMENT');
+              
+              validSalesAmount += cDisp.reduce((sum, d) => sum + (Number(d.totalAmount) || 0), 0);
+              validTotalPaid += cPay.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+            });
+
+            setTotalSales(validSalesAmount.toLocaleString('en-IN'));
+            const pendingAmount = validSalesAmount - validTotalPaid;
             setTotalPendingAmount(pendingAmount.toLocaleString('en-IN'));
           }
         } catch(e) {
-          console.error("Error fetching payments", e);
+          console.error("Error fetching financial data", e);
         }
       }
 
