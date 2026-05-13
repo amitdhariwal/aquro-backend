@@ -10,8 +10,9 @@ export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ isNew: false, isEdit: false, id: '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0] });
+  const [formData, setFormData] = useState({ isNew: false, isEdit: false, id: '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], customerId: '', labelSize: '', isGroupAdd: false, groupItems: [] });
   const [suppliersList, setSuppliersList] = useState([]);
+  const [customers, setCustomers] = useState([]);
   
   const [isHistoryEditOpen, setIsHistoryEditOpen] = useState(false);
   const [historyFormData, setHistoryFormData] = useState({ id: '', addedQty: '', amount: '', supplier: '', notes: '', date: '', previousStock: 0 });
@@ -83,6 +84,10 @@ export default function Inventory() {
       if (resSupp.ok) {
         setSuppliersList(await resSupp.json());
       }
+      const resCust = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers');
+      if (resCust.ok) {
+        setCustomers(await resCust.json());
+      }
     } catch (error) {
       console.error('Error loading inventory data:', error);
     }
@@ -124,7 +129,17 @@ export default function Inventory() {
         const newItemRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ customId: newId, name: formData.name, current: qtyNum, minimum: parseInt(formData.minimum) || 500, unit: 'pcs' })
+          body: JSON.stringify({ 
+            customId: newId, 
+            name: formData.name, 
+            current: qtyNum, 
+            minimum: parseInt(formData.minimum) || 500, 
+            unit: 'pcs',
+            isCustomLabel: !!formData.customerId,
+            customerId: formData.customerId || undefined,
+            customerName: customers.find(c => c._id === formData.customerId)?.businessName || customers.find(c => c._id === formData.customerId)?.name || undefined,
+            labelSize: formData.labelSize || undefined
+          })
         });
         
         await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory/history', {
@@ -160,7 +175,7 @@ export default function Inventory() {
       
       await loadInventory();
       setIsModalOpen(false);
-      setFormData({ isNew: false, isEdit: false, id: stockItems[0]?.id || '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0] });
+      setFormData({ isNew: false, isEdit: false, id: stockItems[0]?.id || '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], customerId: '', labelSize: '', isGroupAdd: false, groupItems: [] });
       setSelectedItem(null);
     } catch (error) {
       console.error('Error saving inventory:', error);
@@ -363,6 +378,30 @@ export default function Inventory() {
           <div className="col-span-full py-12 text-center text-slate-500 bg-white/30 rounded-xl border border-dashed border-slate-300">
             No stock items found matching your filters.
           </div>
+        ) : activeTab === 'Custom Labels' ? (
+          Object.entries(
+            filteredItems.reduce((acc, item) => {
+              const key = item.customerName || item.name;
+              if (!acc[key]) acc[key] = [];
+              acc[key].push(item);
+              return acc;
+            }, {})
+          ).map(([cName, items], idx) => (
+             <div key={idx} onClick={() => setSelectedItem({ isGroup: true, customerName: cName, items })} className="glass-card p-6 border-l-4 border-l-aquro-500 relative overflow-hidden group cursor-pointer hover:border-aquro-300 transition-colors">
+               <div className="flex justify-between items-start mb-4">
+                 <h3 className="font-bold text-slate-800 text-lg">{cName}</h3>
+               </div>
+               <div className="space-y-3">
+                 {items.map(i => (
+                   <div key={i.id} className="flex justify-between items-center text-sm bg-slate-50 p-2 rounded-lg border border-slate-100">
+                     <span className="text-slate-600 font-medium">{i.labelSize || i.name}</span>
+                     <span className={`font-bold ${i.current >= i.minimum ? 'text-emerald-600' : 'text-red-600'}`}>{i.current} {i.unit}</span>
+                   </div>
+                 ))}
+               </div>
+               <div className="mt-4 text-xs text-slate-400 text-right">Click to view history & add stock</div>
+             </div>
+          ))
         ) : (
           filteredItems.map((item, idx) => (
             <div key={idx} onClick={() => setSelectedItem(item)} className="glass-card p-6 border-l-4 border-l-aquro-500 relative overflow-hidden group cursor-pointer hover:border-aquro-300 transition-colors">
@@ -410,15 +449,24 @@ export default function Inventory() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl overflow-hidden relative max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-5 border-b border-slate-100 shrink-0 bg-slate-50">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">{selectedItem.name}</h3>
-                <p className="text-sm text-slate-500 mt-1">
-                  Current Stock: <span className="font-bold text-slate-700">{selectedItem.current} {selectedItem.unit}</span>
-                </p>
+                <h3 className="text-xl font-bold text-slate-800">
+                  {selectedItem.isGroup ? `${selectedItem.customerName} - Custom Labels` : selectedItem.name}
+                </h3>
+                {!selectedItem.isGroup && (
+                  <p className="text-sm text-slate-500 mt-1">
+                    Current Stock: <span className="font-bold text-slate-700">{selectedItem.current} {selectedItem.unit}</span>
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
                 <button 
                   onClick={() => {
-                    setFormData({ isNew: false, isEdit: false, id: selectedItem.id, name: selectedItem.name, qty: '', minimum: selectedItem.minimum.toString(), supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0] });
+                    if (selectedItem.isGroup) {
+                      const firstItem = selectedItem.items[0];
+                      setFormData({ isNew: false, isEdit: false, id: firstItem.id, name: firstItem.name, qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], isGroupAdd: true, groupItems: selectedItem.items, customerId: '', labelSize: '' });
+                    } else {
+                      setFormData({ isNew: false, isEdit: false, id: selectedItem.id, name: selectedItem.name, qty: '', minimum: selectedItem.minimum.toString(), supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], isGroupAdd: false, groupItems: [], customerId: '', labelSize: '' });
+                    }
                     setIsModalOpen(true);
                   }}
                   className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-aquro-600 to-aquro-500 text-white rounded-lg hover:shadow-md transition-all text-sm font-medium mr-2"
@@ -442,6 +490,9 @@ export default function Inventory() {
                     <thead className="bg-slate-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                        {selectedItem.isGroup && (
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Size</th>
+                        )}
                         <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Added Qty</th>
                         <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount (₹)</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Supplier</th>
@@ -450,12 +501,17 @@ export default function Inventory() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
-                      {history.filter(h => h.itemName === selectedItem.name).length === 0 ? (
-                        <tr><td colSpan="6" className="px-6 py-12 text-center text-slate-500">No purchase history found for this item.</td></tr>
+                      {(selectedItem.isGroup ? history.filter(h => selectedItem.items.some(i => i.name === h.itemName)) : history.filter(h => h.itemName === selectedItem.name)).length === 0 ? (
+                        <tr><td colSpan={selectedItem.isGroup ? "7" : "6"} className="px-6 py-12 text-center text-slate-500">No purchase history found.</td></tr>
                       ) : (
-                        history.filter(h => h.itemName === selectedItem.name).map(h => (
+                        (selectedItem.isGroup ? history.filter(h => selectedItem.items.some(i => i.name === h.itemName)) : history.filter(h => h.itemName === selectedItem.name)).map(h => (
                           <tr key={h._id} className="hover:bg-slate-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{h.date}</td>
+                            {selectedItem.isGroup && (
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-aquro-600">
+                                {selectedItem.items.find(i => i.name === h.itemName)?.labelSize || h.itemName}
+                              </td>
+                            )}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-emerald-600">
                               {h.addedQty >= 0 ? '+' : ''}{h.addedQty} <span className="text-[10px] text-slate-400 font-normal block">({h.previousStock} → {h.newStock})</span>
                             </td>
@@ -516,7 +572,22 @@ export default function Inventory() {
                 </div>
               )}
 
-              {!formData.isNew && !formData.isEdit ? (
+              {!formData.isNew && !formData.isEdit && formData.isGroupAdd ? (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Select Label Size</label>
+                  <select 
+                    required
+                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                    value={formData.id}
+                    onChange={(e) => {
+                       const it = formData.groupItems.find(x => x.id === e.target.value);
+                       setFormData({...formData, id: e.target.value, name: it.name, minimum: it.minimum.toString()});
+                    }}
+                  >
+                    {formData.groupItems.map(s => <option key={s.id} value={s.id}>{s.labelSize || s.name}</option>)}
+                  </select>
+                </div>
+              ) : !formData.isNew && !formData.isEdit ? (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Select Item</label>
                   <select 
@@ -531,18 +602,58 @@ export default function Inventory() {
                 </div>
               ) : (
                 <>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Item Name</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="e.g. Custom Label - Taj Hotel"
-                      className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      disabled={!formData.isNew && !formData.isEdit}
-                    />
-                  </div>
+                  {formData.isNew ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
+                        <select
+                          required
+                          className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                          value={formData.customerId}
+                          onChange={(e) => {
+                             const c = customers.find(x => x._id === e.target.value);
+                             const cName = c?.businessName || c?.name || '';
+                             setFormData({...formData, customerId: e.target.value, name: `Custom Label - ${cName} (${formData.labelSize || 'Size'})`});
+                          }}
+                        >
+                          <option value="">Select Customer</option>
+                          {customers.map(c => <option key={c._id} value={c._id}>{c.businessName || c.name}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Label Size</label>
+                        <select
+                          required
+                          className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                          value={formData.labelSize}
+                          onChange={(e) => {
+                             const c = customers.find(x => x._id === formData.customerId);
+                             const cName = c?.businessName || c?.name || 'Customer';
+                             setFormData({...formData, labelSize: e.target.value, name: `Custom Label - ${cName} (${e.target.value})`});
+                          }}
+                        >
+                          <option value="">Select Size</option>
+                          <option value="200ml">200ml</option>
+                          <option value="500ml">500ml</option>
+                          <option value="1L">1L</option>
+                          <option value="2L">2L</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Item Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="e.g. Custom Label - Taj Hotel"
+                        className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Minimum Alert Threshold</label>
                     <input 

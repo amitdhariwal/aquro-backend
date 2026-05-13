@@ -6,7 +6,11 @@ const inventorySchema = new mongoose.Schema({
   current: { type: Number, required: true, default: 0 },
   minimum: { type: Number, required: true, default: 500 },
   unit: { type: String, required: true, default: 'pcs' },
-  isHidden: { type: Boolean, default: false }
+  isHidden: { type: Boolean, default: false },
+  isCustomLabel: { type: Boolean, default: false },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+  customerName: { type: String },
+  labelSize: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Inventory', inventorySchema);
