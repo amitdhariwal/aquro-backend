@@ -133,12 +133,8 @@ export default function Expenses() {
   const todayExpenses = expenses.filter(e => e.date === todayStr);
   const totalTodayAmount = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-  // Find top category this month
-  const categoryTotals = {};
-  currentMonthExpenses.forEach(e => {
-    categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
-  });
-  const topCategory = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a])[0] || 'None';
+  // Balance calculation as requested
+  const balanceAmount = totalReceived - totalMonthAmount;
 
   // Filtered List
   const filteredExpenses = expenses.filter(e => {
@@ -201,10 +197,14 @@ export default function Expenses() {
         <div className="glass-card p-6 border-l-4 border-l-purple-500 relative overflow-hidden group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-slate-500">Top Category (This Month)</p>
-              <h3 className="text-xl font-bold text-slate-800 mt-2 truncate max-w-[150px]">{topCategory}</h3>
+              <p className="text-sm font-medium text-slate-500">Balance Amount</p>
+              <h3 className={`text-3xl font-bold mt-2 ${balanceAmount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                ₹{balanceAmount.toLocaleString()}
+              </h3>
             </div>
-            <div className="p-3 bg-purple-50 text-purple-600 rounded-xl"><PieChart className="w-6 h-6" /></div>
+            <div className={`p-3 rounded-xl ${balanceAmount >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+              <PieChart className="w-6 h-6" />
+            </div>
           </div>
         </div>
       </div>
