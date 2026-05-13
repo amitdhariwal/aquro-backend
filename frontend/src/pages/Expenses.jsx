@@ -3,6 +3,7 @@ import { Plus, Receipt, IndianRupee, PieChart, Filter, Calendar, X, Trash2, Edit
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState([]);
+  const [totalReceived, setTotalReceived] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterMonth, setFilterMonth] = useState('All');
@@ -38,9 +39,20 @@ export default function Expenses() {
 
   const fetchExpenses = async () => {
     try {
-      const response = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/expenses');
-      if (response.ok) {
-        const data = await response.json();
+      const baseUrl = import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com';
+      const [resExp, resPay] = await Promise.all([
+        fetch(`${baseUrl}/api/expenses`),
+        fetch(`${baseUrl}/api/customers/payments/all`)
+      ]);
+
+      if (resPay.ok) {
+        const payments = await resPay.json();
+        const received = payments.filter(p => p.type === 'PAYMENT').reduce((sum, p) => sum + p.amount, 0);
+        setTotalReceived(received);
+      }
+
+      if (resExp.ok) {
+        const data = await resExp.json();
         const formattedData = data.map(item => ({ ...item, id: item._id }));
         setExpenses(formattedData);
       }
@@ -149,7 +161,17 @@ export default function Expenses() {
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="glass-card p-6 border-l-4 border-l-emerald-500 relative overflow-hidden group">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Total Received Money</p>
+              <h3 className="text-3xl font-bold text-slate-800 mt-2">₹{totalReceived.toLocaleString()}</h3>
+            </div>
+            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><Wallet className="w-6 h-6" /></div>
+          </div>
+        </div>
+
         <div className="glass-card p-6 border-l-4 border-l-red-500 relative overflow-hidden group">
           <div className="flex justify-between items-start">
             <div>
