@@ -50,16 +50,26 @@ export default function Inventory() {
           const data2 = await resInv2.json();
           setStockItems(data2.map(d => ({ ...d, id: d.customId })));
         } else {
-          // Upgrade existing databases with new label options if missing
-          const missingLabels = [
+          // Upgrade existing databases with new label options or missing core items
+          const coreItems = [
+            { customId: 'inv-200ml', name: '200ml Bottles (Empty)', current: 0, minimum: 5000, unit: 'pcs' },
+            { customId: 'inv-500ml', name: '500ml Bottles (Empty)', current: 0, minimum: 3000, unit: 'pcs' },
+            { customId: 'inv-1L', name: '1L Bottles (Empty)', current: 0, minimum: 5000, unit: 'pcs' },
+            { customId: 'inv-2L', name: '2L Bottles (Empty)', current: 0, minimum: 2000, unit: 'pcs' },
             { customId: 'inv-std-lbl-200ml', name: 'AQURO Labels (200ml)', current: 0, minimum: 20000, unit: 'pcs' },
             { customId: 'inv-std-lbl-500ml', name: 'AQURO Labels (500ml)', current: 0, minimum: 20000, unit: 'pcs' },
             { customId: 'inv-std-lbl-1L', name: 'AQURO Labels (1L)', current: 0, minimum: 20000, unit: 'pcs' },
             { customId: 'inv-std-lbl-2L', name: 'AQURO Labels (2L)', current: 0, minimum: 20000, unit: 'pcs' }
-          ].filter(l => !data.some(d => d.customId === l.customId));
+          ];
+          const capColors = ['Blue', 'White', 'Green', 'Red', 'Gold', 'Black', 'Yellow', 'Orange', 'Purple', 'Pink', 'Silver', 'Clear'];
+          capColors.forEach(color => {
+            coreItems.push({ customId: `inv-caps-${color.toLowerCase()}`, name: `Bottle Caps (${color})`, current: 0, minimum: 10000, unit: 'pcs' });
+          });
 
-          if (missingLabels.length > 0) {
-            for (let item of missingLabels) {
+          const missingItems = coreItems.filter(l => !data.some(d => d.customId === l.customId));
+
+          if (missingItems.length > 0) {
+            for (let item of missingItems) {
               await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
