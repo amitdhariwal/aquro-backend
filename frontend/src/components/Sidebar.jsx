@@ -25,6 +25,7 @@ const navigation = [
   { name: 'Customers', to: '/customers', icon: Users },
   { name: 'Suppliers', to: '/suppliers', icon: Briefcase },
   { name: 'Expenses', to: '/expenses', icon: Receipt },
+  { name: 'Employees', to: '/employees', icon: Users },
   { name: 'Reports', to: '/reports', icon: BarChart3 },
   { name: 'Water Quality', to: '/quality', icon: TestTube },
 ];

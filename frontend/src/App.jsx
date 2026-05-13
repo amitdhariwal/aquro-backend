@@ -11,6 +11,7 @@ import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
 import WaterQuality from './pages/WaterQuality';
 import ReadyStock from './pages/ReadyStock';
+import Employees from './pages/Employees';
 import Suppliers from './pages/Suppliers';
 import Login from './pages/Login';
 
@@ -79,6 +80,7 @@ function App() {
                 <Route path="/dispatch" element={<Dispatch />} />
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/expenses" element={<Expenses />} />
+                <Route path="/employees" element={<Employees />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/quality" element={<WaterQuality />} />
                 <Route path="/readystock" element={<ReadyStock />} />

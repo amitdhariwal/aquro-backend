@@ -17,6 +17,7 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const dispatchRoutes = require('./routes/dispatchRoutes');
 const waterQualityRoutes = require('./routes/waterQualityRoutes');
 const authRoutes = require('./routes/authRoutes');
+const employeeRoutes = require('./routes/employeeRoutes');
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -27,6 +28,7 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/dispatches', dispatchRoutes);
 app.use('/api/water-quality', waterQualityRoutes);
+app.use('/api/employees', employeeRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'AQURO Admin API is running' });
