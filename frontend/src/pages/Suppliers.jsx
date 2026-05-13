@@ -13,6 +13,9 @@ export default function Suppliers() {
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [editPaymentModalOpen, setEditPaymentModalOpen] = useState(false);
   const [editPaymentForm, setEditPaymentForm] = useState({ id: '', date: '', amount: '', note: '' });
+  
+  const [editPurchaseForm, setEditPurchaseForm] = useState({ id: null, amount: '', notes: '', addedQty: '' });
+  const [isEditPurchaseModalOpen, setIsEditPurchaseModalOpen] = useState(false);
 
   const categories = ['Plastic Vendor', 'Label Printer', 'Box Manufacturer', 'Chemicals & RO Parts', 'Other'];
 
@@ -140,8 +143,81 @@ export default function Suppliers() {
           date: editPaymentForm.date
         })
       });
-      fetchSupplierPayments(selectedSupplier.id);
-      setEditPaymentModalOpen(false);
+      if (response.ok) {
+        fetchSupplierPayments(selectedSupplier.id);
+        setEditPaymentModalOpen(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update payment');
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+
+  const handleDeletePurchase = async (purchaseEntry) => {
+    if (window.confirm('Are you sure you want to delete this stock purchase? This will revert the stock quantity in Inventory!')) {
+      try {
+        const invRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory');
+        if (invRes.ok) {
+           const stockItems = await invRes.json();
+           const itemToUpdate = stockItems.find(i => i.name === purchaseEntry.itemName);
+           if (itemToUpdate) {
+             const newCurrent = Math.max(0, itemToUpdate.current - purchaseEntry.addedQty);
+             await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/${itemToUpdate._id}`, {
+               method: 'PUT',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ current: newCurrent })
+             });
+           }
+        }
+        await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/history/${purchaseEntry._id}`, {
+          method: 'DELETE'
+        });
+        fetchSupplierPurchases(selectedSupplier.businessName);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleEditPurchaseSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmittingPayment) return;
+    setIsSubmittingPayment(true);
+    try {
+      const oldEntry = supplierPurchases.find(p => p._id === editPurchaseForm.id);
+      const newQty = parseInt(editPurchaseForm.addedQty) || 0;
+      
+      const invRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory');
+      if (invRes.ok) {
+         const stockItems = await invRes.json();
+         const itemToUpdate = stockItems.find(i => i.name === oldEntry.itemName);
+         if (itemToUpdate) {
+            const diff = newQty - oldEntry.addedQty;
+            if (diff !== 0) {
+               const newCurrent = Math.max(0, itemToUpdate.current + diff);
+               await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/${itemToUpdate._id}`, {
+                 method: 'PUT',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ current: newCurrent })
+               });
+            }
+         }
+      }
+
+      await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/inventory/history/${editPurchaseForm.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseFloat(editPurchaseForm.amount) || 0,
+          notes: editPurchaseForm.notes,
+          addedQty: newQty,
+          newStock: oldEntry.previousStock + newQty
+        })
+      });
+      fetchSupplierPurchases(selectedSupplier.businessName);
+      setIsEditPurchaseModalOpen(false);
     } catch (err) {
       console.error(err);
     } finally {
@@ -533,7 +609,7 @@ export default function Suppliers() {
                       </thead>
                       <tbody className="bg-white divide-y divide-slate-100">
                         {[...supplierPurchases.map(d => ({ ...d, isPurchase: true })), ...supplierPayments.map(p => ({ ...p, isPurchase: false }))]
-                          .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort newest first
+                          .sort((a, b) => new Date(b.date) - new Date(a.date)) 
                           .map((item, idx) => (
                             <tr key={idx} className="hover:bg-slate-50">
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{item.date}</td>
@@ -570,10 +646,28 @@ export default function Suppliers() {
                                         setEditPaymentModalOpen(true);
                                       }}
                                       className="text-blue-500 hover:text-blue-700 mr-2 transition-colors"
+                                      title="Edit Payment"
                                     >
                                       <Edit2 className="w-4 h-4 inline" />
                                     </button>
-                                    <button onClick={() => handleDeletePayment(item._id)} className="text-red-500 hover:text-red-700 transition-colors">
+                                    <button onClick={() => handleDeletePayment(item._id)} className="text-red-500 hover:text-red-700 transition-colors" title="Delete Payment">
+                                      <Trash2 className="w-4 h-4 inline" />
+                                    </button>
+                                  </>
+                                )}
+                                {item.isPurchase && (
+                                  <>
+                                    <button 
+                                      onClick={() => {
+                                        setEditPurchaseForm({ id: item._id, amount: item.amount || '', notes: item.notes || '', addedQty: item.addedQty });
+                                        setIsEditPurchaseModalOpen(true);
+                                      }}
+                                      className="text-blue-500 hover:text-blue-700 mr-2 transition-colors"
+                                      title="Edit Purchase Entry"
+                                    >
+                                      <Edit2 className="w-4 h-4 inline" />
+                                    </button>
+                                    <button onClick={() => handleDeletePurchase(item)} className="text-red-500 hover:text-red-700 transition-colors" title="Delete Purchase Entry">
                                       <Trash2 className="w-4 h-4 inline" />
                                     </button>
                                   </>
@@ -616,7 +710,6 @@ export default function Suppliers() {
         </div>
       )}
 
-      {/* Edit Payment Modal */}
       {editPaymentModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
@@ -640,6 +733,57 @@ export default function Suppliers() {
               <button type="submit" disabled={isSubmittingPayment} className={`w-full py-2 text-white rounded font-medium text-sm transition-colors ${isSubmittingPayment ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
                 {isSubmittingPayment ? 'Saving...' : 'Save Changes'}
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isEditPurchaseModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden relative">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-800">Edit Purchase Entry</h3>
+              <button onClick={() => setIsEditPurchaseModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleEditPurchaseSubmit} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Total Amount (₹)</label>
+                <input 
+                  type="number" 
+                  required
+                  min="0"
+                  step="0.01"
+                  className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                  value={editPurchaseForm.amount}
+                  onChange={(e) => setEditPurchaseForm({...editPurchaseForm, amount: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Quantity Added</label>
+                <input 
+                  type="number" 
+                  required
+                  min="1"
+                  className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                  value={editPurchaseForm.addedQty}
+                  onChange={(e) => setEditPurchaseForm({...editPurchaseForm, addedQty: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Remarks / Invoice No.</label>
+                <input 
+                  type="text" 
+                  className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
+                  value={editPurchaseForm.notes}
+                  onChange={(e) => setEditPurchaseForm({...editPurchaseForm, notes: e.target.value})}
+                />
+              </div>
+              <div className="pt-2 flex gap-3">
+                <button type="button" onClick={() => setIsEditPurchaseModalOpen(false)} className="flex-1 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 font-medium text-sm">Cancel</button>
+                <button type="submit" disabled={isSubmittingPayment} className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm disabled:opacity-50">Save Changes</button>
+              </div>
             </form>
           </div>
         </div>
