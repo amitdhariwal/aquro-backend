@@ -45,7 +45,7 @@ export default function Expenses() {
   const fetchExpenses = async () => {
     try {
       const baseUrl = import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com';
-      const [resExp, resPay, resCust, resEmp] = await Promise.all([
+      const [resExp, resPay, resCust, resEmp, resSupp] = await Promise.all([
         fetch(`${baseUrl}/api/expenses`),
         fetch(`${baseUrl}/api/customers/payments/all`),
         fetch(`${baseUrl}/api/customers`),
