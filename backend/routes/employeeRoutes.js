@@ -10,11 +10,15 @@ router.get('/', async (req, res) => {
     
     // Aggregate payments for each employee
     const employeesWithStats = await Promise.all(employees.map(async (emp) => {
-      const payments = await EmployeePayment.find({ employeeId: emp._id });
-      const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+      const payments = await EmployeePayment.find({ employeeId: emp._id }).sort({ date: -1, createdAt: -1 });
+      const totalCredit = payments.filter(p => p.type === 'Credit').reduce((sum, p) => sum + p.amount, 0);
+      const totalDebit = payments.filter(p => p.type === 'Debit').reduce((sum, p) => sum + p.amount, 0);
+      const balance = totalCredit - totalDebit; // Positive means plant owes employee, Negative means employee owes plant (advance)
       return {
         ...emp.toObject(),
-        totalPaid,
+        totalCredit,
+        totalDebit,
+        balance,
         payments
       };
     }));
