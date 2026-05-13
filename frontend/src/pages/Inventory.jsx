@@ -404,43 +404,45 @@ export default function Inventory() {
                 <Package className="w-5 h-5 text-aquro-500" /> Purchase Statement & History
               </h4>
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Added Qty</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount (₹)</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Supplier</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes / Ref</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-slate-200">
-                    {history.filter(h => h.itemName === selectedItem.name).length === 0 ? (
-                      <tr><td colSpan="6" className="px-6 py-12 text-center text-slate-500">No purchase history found for this item.</td></tr>
-                    ) : (
-                      history.filter(h => h.itemName === selectedItem.name).map(h => (
-                        <tr key={h._id} className="hover:bg-slate-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{h.date}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-emerald-600">
-                            {h.addedQty >= 0 ? '+' : ''}{h.addedQty} <span className="text-[10px] text-slate-400 font-normal block">({h.previousStock} → {h.newStock})</span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-slate-700">₹{h.amount || 0}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{h.supplier || '-'}</td>
-                          <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">{h.notes || '-'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button onClick={() => handleEditHistory(h)} className="text-blue-500 hover:text-blue-700 mr-2 transition-colors">
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => handleDeleteHistory(h)} className="text-red-500 hover:text-red-700 transition-colors">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Added Qty</th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount (₹)</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Supplier</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes / Ref</th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {history.filter(h => h.itemName === selectedItem.name).length === 0 ? (
+                        <tr><td colSpan="6" className="px-6 py-12 text-center text-slate-500">No purchase history found for this item.</td></tr>
+                      ) : (
+                        history.filter(h => h.itemName === selectedItem.name).map(h => (
+                          <tr key={h._id} className="hover:bg-slate-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{h.date}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-emerald-600">
+                              {h.addedQty >= 0 ? '+' : ''}{h.addedQty} <span className="text-[10px] text-slate-400 font-normal block">({h.previousStock} → {h.newStock})</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-slate-700">₹{h.amount || 0}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{h.supplier || '-'}</td>
+                            <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">{h.notes || '-'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <button onClick={() => handleEditHistory(h)} className="text-blue-500 hover:text-blue-700 mr-2 transition-colors">
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button onClick={() => handleDeleteHistory(h)} className="text-red-500 hover:text-red-700 transition-colors">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
