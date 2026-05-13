@@ -244,7 +244,11 @@ export default function Employees() {
                 </tr>
               ) : (
                 employees.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
+                  <tr 
+                    key={emp.id} 
+                    onClick={() => { setSelectedEmp(emp); setPayForm(getInitialPayForm()); setIsLedgerModalOpen(true); }}
+                    className="hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-bold text-slate-800">{emp.name}</div>
                       <div className="text-sm text-slate-500">{emp.mobile}</div>
@@ -260,16 +264,16 @@ export default function Employees() {
                       {emp.balance > 0 ? `₹${emp.balance.toLocaleString()} (Due)` : emp.balance < 0 ? `₹${Math.abs(emp.balance).toLocaleString()} (Adv)` : '₹0'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button onClick={() => downloadPolicyPDF(emp)} className="text-aquro-600 hover:text-aquro-800 mr-3" title="Download Offer Letter">
+                      <button onClick={(e) => { e.stopPropagation(); downloadPolicyPDF(emp); }} className="text-aquro-600 hover:text-aquro-800 mr-3" title="Download Offer Letter">
                         <Download className="w-4 h-4" />
                       </button>
-                      <button onClick={() => { setSelectedEmp(emp); setPayForm(getInitialPayForm()); setIsLedgerModalOpen(true); }} className="text-emerald-600 hover:text-emerald-800 mr-3" title="Employee Ledger (Credit/Debit)">
+                      <button onClick={(e) => { e.stopPropagation(); setSelectedEmp(emp); setPayForm(getInitialPayForm()); setIsLedgerModalOpen(true); }} className="text-emerald-600 hover:text-emerald-800 mr-3" title="Employee Ledger (Credit/Debit)">
                         <Wallet className="w-4 h-4" />
                       </button>
-                      <button onClick={() => { setEmpForm(emp); setIsEmpModalOpen(true); }} className="text-slate-600 hover:text-slate-800 mr-3">
+                      <button onClick={(e) => { e.stopPropagation(); setEmpForm(emp); setIsEmpModalOpen(true); }} className="text-slate-600 hover:text-slate-800 mr-3" title="Edit Employee">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDeleteEmployee(emp.id)} className="text-red-500 hover:text-red-700">
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(emp.id); }} className="text-red-500 hover:text-red-700" title="Delete Employee">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
