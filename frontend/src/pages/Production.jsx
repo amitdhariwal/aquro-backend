@@ -84,10 +84,7 @@ export default function Production() {
           } else if (entry.label === 'Standard' && item.customId === `inv-std-lbl-${entry.size}`) {
             newCurrent = Math.max(0, item.current + qtyToAdjust);
             shouldUpdate = true;
-          } else if (entry.label === 'Custom' && (
-              (item.isCustomLabel && item.customerName === entry.clientName && item.labelSize === entry.size) ||
-              (!item.isCustomLabel && entry.clientName && item.name.toLowerCase().includes(entry.clientName.toLowerCase()) && item.name.includes(entry.size))
-          )) {
+          } else if (entry.label === 'Custom' && item.isCustomLabel && item.customerName === entry.clientName && item.labelSize === entry.size) {
             newCurrent = Math.max(0, item.current + qtyToAdjust);
             shouldUpdate = true;
           }
@@ -132,40 +129,43 @@ export default function Production() {
     
     const q = parseInt(formData.qty) || 0;
 
-    // Validate Stock for New Entry
-    if (!formData.id) {
-      try {
-        const invRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory');
-        if (invRes.ok) {
-          const inventory = await invRes.json();
-          const reqBottle = inventory.find(i => i.customId === `inv-${formData.size}`);
-          const reqCap = inventory.find(i => i.customId === `inv-caps-${formData.capColor.toLowerCase()}` || (i.name.toLowerCase().includes('cap') && i.name.toLowerCase().includes(formData.capColor.toLowerCase())));
-          let reqLabel = null;
-          
-          if (formData.label === 'Standard') {
-            reqLabel = inventory.find(i => i.customId === `inv-std-lbl-${formData.size}`);
-          } else {
-            reqLabel = inventory.find(i => i.isCustomLabel && i.customerName === formData.clientName && i.labelSize === formData.size);
-            if (!reqLabel && formData.clientName) {
-              reqLabel = inventory.find(i => !i.isCustomLabel && i.name.toLowerCase().includes(formData.clientName.toLowerCase()) && i.name.includes(formData.size));
-            }
-          }
-
-          const errors = [];
-          if (!reqBottle || reqBottle.current < q) errors.push(`• Not enough ${formData.size} empty bottles (Available: ${reqBottle?.current || 0})`);
-          if (!reqCap || reqCap.current < q) errors.push(`• Not enough ${formData.capColor} caps (Available: ${reqCap?.current || 0})`);
-          if (formData.label === 'Standard' && (!reqLabel || reqLabel.current < q)) errors.push(`• Not enough AQURO Standard Labels (Available: ${reqLabel?.current || 0})`);
-          if (formData.label === 'Custom' && (!reqLabel || reqLabel.current < q)) errors.push(`• Not enough Custom Labels for ${formData.clientName} (Available: ${reqLabel?.current || 0})`);
-
-          if (errors.length > 0) {
-            alert("INSUFFICIENT STOCK FOR PRODUCTION:\n\n" + errors.join('\n') + "\n\nPlease add stock in the Inventory page first.");
-            setIsSubmitting(false);
-            return;
-          }
+    // Validate Stock for both New and Edit Entries
+    try {
+      const invRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory');
+      if (invRes.ok) {
+        const inventory = await invRes.json();
+        const reqBottle = inventory.find(i => i.customId === `inv-${formData.size}`);
+        const reqCap = inventory.find(i => i.customId === `inv-caps-${formData.capColor.toLowerCase()}` || (i.name.toLowerCase().includes('cap') && i.name.toLowerCase().includes(formData.capColor.toLowerCase())));
+        let reqLabel = null;
+        
+        if (formData.label === 'Standard') {
+          reqLabel = inventory.find(i => i.customId === `inv-std-lbl-${formData.size}`);
+        } else {
+          reqLabel = inventory.find(i => i.isCustomLabel && i.customerName === formData.clientName && i.labelSize === formData.size);
         }
-      } catch (err) {
-        console.error(err);
+
+        let oldBottleQty = 0; let oldCapQty = 0; let oldLabelQty = 0;
+        if (formData.id) {
+          const oldEntry = productions.find(p => p.id === formData.id);
+          if (oldEntry && oldEntry.size === formData.size) oldBottleQty = oldEntry.qty;
+          if (oldEntry && oldEntry.capColor === formData.capColor) oldCapQty = oldEntry.qty;
+          if (oldEntry && oldEntry.label === formData.label && oldEntry.clientName === formData.clientName && oldEntry.size === formData.size) oldLabelQty = oldEntry.qty;
+        }
+
+        const errors = [];
+        if (!reqBottle || (reqBottle.current + oldBottleQty) < q) errors.push(`• Not enough ${formData.size} empty bottles (Available: ${reqBottle?.current || 0})`);
+        if (!reqCap || (reqCap.current + oldCapQty) < q) errors.push(`• Not enough ${formData.capColor} caps (Available: ${reqCap?.current || 0})`);
+        if (formData.label === 'Standard' && (!reqLabel || (reqLabel.current + oldLabelQty) < q)) errors.push(`• Not enough AQURO Standard Labels for ${formData.size} (Available: ${reqLabel?.current || 0})`);
+        if (formData.label === 'Custom' && (!reqLabel || (reqLabel.current + oldLabelQty) < q)) errors.push(`• Not enough Custom Labels for ${formData.clientName} (${formData.size}) (Available: ${reqLabel?.current || 0})`);
+
+        if (errors.length > 0) {
+          alert("INSUFFICIENT STOCK FOR PRODUCTION:\n\n" + errors.join('\n') + "\n\nPlease add stock in the Inventory page first.");
+          setIsSubmitting(false);
+          return;
+        }
       }
+    } catch (err) {
+      console.error(err);
     }
 
     // Calculate expiry (6 months from selected date)
