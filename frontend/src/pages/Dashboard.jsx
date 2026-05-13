@@ -8,10 +8,12 @@ import {
   Activity
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 // Removed static data
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [totalProduction, setTotalProduction] = useState('0');
   const [totalSales, setTotalSales] = useState('0');
   const [totalPendingAmount, setTotalPendingAmount] = useState('0');
@@ -142,10 +144,10 @@ export default function Dashboard() {
   }, []);
 
   const stats = [
-    { title: 'Total Production', value: totalProduction, unit: 'Bottles', icon: Droplet, trend: 'Live', trendUp: true },
-    { title: 'Total Sales (Revenue)', value: '₹' + totalSales, unit: '', icon: IndianRupee, trend: 'Gross Sales', trendUp: true },
-    { title: 'Total Pending Amount', value: '₹' + totalPendingAmount, unit: '', icon: TrendingUp, trend: 'To Collect', trendUp: false },
-    { title: 'Delivered Orders', value: deliveredOrders, unit: 'Orders', icon: Package, trend: 'Completed', trendUp: true },
+    { title: 'Total Production', value: totalProduction, unit: 'Bottles', icon: Droplet, trend: 'Live', trendUp: true, link: '/production' },
+    { title: 'Total Sales (Revenue)', value: '₹' + totalSales, unit: '', icon: IndianRupee, trend: 'Gross Sales', trendUp: true, link: '/customers' },
+    { title: 'Total Pending Amount', value: '₹' + totalPendingAmount, unit: '', icon: TrendingUp, trend: 'To Collect', trendUp: false, link: '/customers' },
+    { title: 'Delivered Orders', value: deliveredOrders, unit: 'Orders', icon: Package, trend: 'Completed', trendUp: true, link: '/dispatch' },
   ];
 
   return (
@@ -160,7 +162,11 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <div key={index} className="glass-card p-6 flex flex-col relative overflow-hidden group hover:border-aquro-300 transition-colors">
+          <div 
+            key={index} 
+            onClick={() => navigate(stat.link)}
+            className="glass-card p-6 flex flex-col relative overflow-hidden group hover:border-aquro-300 transition-colors cursor-pointer"
+          >
             <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-aquro-50 to-aquro-100 rounded-full group-hover:scale-110 transition-transform duration-500" />
             
             <div className="flex justify-between items-start mb-4 relative z-10">
