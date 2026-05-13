@@ -127,15 +127,14 @@ export default function Expenses() {
   const uniqueMonths = [...new Set(expenses.map(e => getMonthStr(e.date)))].sort().reverse();
 
   // Stats calculation
-  const totalExpensesAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
   const currentMonthExpenses = expenses.filter(e => getMonthStr(e.date) === currentMonthStr);
-  const totalMonthAmount = currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
-  
+  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+
   const todayExpenses = expenses.filter(e => e.date === todayStr);
   const totalTodayAmount = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   // Balance calculation as requested
-  const balanceAmount = totalReceived - totalExpensesAmount;
+  const balanceAmount = totalReceived - totalExpenses;
 
   // Filtered List
   const filteredExpenses = expenses.filter(e => {
@@ -179,7 +178,7 @@ export default function Expenses() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-slate-500">Total Expenses</p>
-              <h3 className="text-3xl font-bold text-slate-800 mt-2">₹{totalExpensesAmount.toLocaleString()}</h3>
+              <h3 className="text-3xl font-bold text-slate-800 mt-2">₹{totalExpenses.toLocaleString()}</h3>
             </div>
             <div className="p-3 bg-red-50 text-red-600 rounded-xl"><IndianRupee className="w-6 h-6" /></div>
           </div>
