@@ -34,7 +34,7 @@ export default function Production() {
       const resCust = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/customers');
       if (resCust.ok) {
         const data = await resCust.json();
-        setCustomers(data.map(c => ({ id: c._id, name: c.businessName })));
+        setCustomers(data.map(c => ({ id: c._id, name: c.businessName || c.name })));
       }
 
       const resHist = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/production/history');
@@ -81,10 +81,13 @@ export default function Production() {
               (item.name.toLowerCase().includes('cap') && item.name.toLowerCase().includes(entry.capColor.toLowerCase()))) {
             newCurrent = Math.max(0, item.current + qtyToAdjust);
             shouldUpdate = true;
-          } else if (entry.label === 'Standard' && item.customId === 'inv-std-lbl') {
+          } else if (entry.label === 'Standard' && item.customId === `inv-std-lbl-${entry.size}`) {
             newCurrent = Math.max(0, item.current + qtyToAdjust);
             shouldUpdate = true;
-          } else if (entry.label === 'Custom' && item.name.toLowerCase().includes((entry.clientName || '').toLowerCase())) {
+          } else if (entry.label === 'Custom' && (
+              (item.isCustomLabel && item.customerName === entry.clientName && item.labelSize === entry.size) ||
+              (!item.isCustomLabel && item.name.toLowerCase().includes((entry.clientName || '').toLowerCase()) && item.name.includes(entry.size))
+          )) {
             newCurrent = Math.max(0, item.current + qtyToAdjust);
             shouldUpdate = true;
           }
@@ -140,9 +143,12 @@ export default function Production() {
           let reqLabel = null;
           
           if (formData.label === 'Standard') {
-            reqLabel = inventory.find(i => i.customId === 'inv-std-lbl');
+            reqLabel = inventory.find(i => i.customId === `inv-std-lbl-${formData.size}`);
           } else {
-            reqLabel = inventory.find(i => i.name.toLowerCase().includes(formData.clientName.toLowerCase()));
+            reqLabel = inventory.find(i => i.isCustomLabel && i.customerName === formData.clientName && i.labelSize === formData.size);
+            if (!reqLabel) {
+              reqLabel = inventory.find(i => !i.isCustomLabel && i.name.toLowerCase().includes(formData.clientName.toLowerCase()) && i.name.includes(formData.size));
+            }
           }
 
           const errors = [];
