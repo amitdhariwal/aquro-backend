@@ -3,6 +3,9 @@ import { Plus, Users, IndianRupee, FileText, Download, Wallet, Trash2, Edit2, X,
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
+const paymentModes = ['Cash', 'Bank Transfer', 'UPI', 'Cheque'];
+const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
 export default function Employees() {
   const [employees, setEmployees] = useState([]);
   const [isEmpModalOpen, setIsEmpModalOpen] = useState(false);
@@ -10,9 +13,6 @@ export default function Employees() {
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [empForm, setEmpForm] = useState(getInitialEmpForm());
   const [payForm, setPayForm] = useState(getInitialPayForm());
-
-  const paymentModes = ['Cash', 'Bank Transfer', 'UPI', 'Cheque'];
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   function getInitialEmpForm() {
     return { id: null, name: '', mobile: '', post: '', joinDate: new Date().toISOString().split('T')[0], salary: '' };
