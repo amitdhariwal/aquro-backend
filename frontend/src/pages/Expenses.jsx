@@ -56,9 +56,10 @@ export default function Expenses() {
     const isEdit = !!formData.id;
 
     try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com';
       const url = isEdit 
-        ? `/api/expenses/${formData.id}` 
-        : (import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/expenses';
+        ? `${baseUrl}/api/expenses/${formData.id}` 
+        : `${baseUrl}/api/expenses`;
       const method = isEdit ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -84,7 +85,8 @@ export default function Expenses() {
   const handleDelete = async (id) => {
     if(window.confirm('Are you sure you want to delete this expense entry?')) {
       try {
-        const response = await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+        const baseUrl = import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com';
+        const response = await fetch(`${baseUrl}/api/expenses/${id}`, { method: 'DELETE' });
         if (response.ok) {
           fetchExpenses();
         }
