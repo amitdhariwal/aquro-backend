@@ -4,6 +4,7 @@ import { Plus, Receipt, IndianRupee, PieChart, Filter, Calendar, X, Trash2, Edit
 export default function Expenses() {
   const [expenses, setExpenses] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [totalReceived, setTotalReceived] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState('All');
@@ -17,6 +18,7 @@ export default function Expenses() {
     'Plant Maintenance & Repair',
     'Office Expenses',
     'Marketing & Promotion',
+    'Supplier Payment',
     'Miscellaneous'
   ];
 
@@ -31,6 +33,7 @@ export default function Expenses() {
       amount: '',
       paymentMode: 'Cash',
       employeeId: '',
+      supplierId: '',
       notes: ''
     };
   }
@@ -46,11 +49,15 @@ export default function Expenses() {
         fetch(`${baseUrl}/api/expenses`),
         fetch(`${baseUrl}/api/customers/payments/all`),
         fetch(`${baseUrl}/api/customers`),
-        fetch(`${baseUrl}/api/employees`)
+        fetch(`${baseUrl}/api/employees`),
+        fetch(`${baseUrl}/api/suppliers`)
       ]);
 
       if (resEmp.ok) {
         setEmployees(await resEmp.json());
+      }
+      if (resSupp.ok) {
+        setSuppliers(await resSupp.json());
       }
 
       if (resPay.ok && resCust.ok) {
@@ -110,6 +117,23 @@ export default function Expenses() {
             });
           } catch (e) {
             console.error('Error linking to employee ledger:', e);
+          }
+        }
+        
+        if (!isEdit && formData.supplierId) {
+          try {
+            await fetch(`${baseUrl}/api/suppliers/${formData.supplierId}/payments`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                date: new Date(formData.date).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true, month: 'short', day: 'numeric', year: 'numeric' }),
+                type: 'PAYMENT',
+                amount: amountVal,
+                note: `Expense Ref: ${formData.title}`
+              })
+            });
+          } catch (e) {
+            console.error('Error linking to supplier ledger:', e);
           }
         }
         
@@ -381,6 +405,24 @@ export default function Expenses() {
                   {!formData.id && (
                     <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
                       If selected, this amount will automatically be added as an Advance/Payment in the Employee's Ledger.
+                    </p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Link to Supplier (Optional)</label>
+                  <select 
+                    disabled={!!formData.id}
+                    className="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-red-500 focus:border-red-500 bg-slate-50" 
+                    value={formData.supplierId || ''} 
+                    onChange={e => setFormData({...formData, supplierId: e.target.value})}
+                  >
+                    <option value="">-- No Supplier --</option>
+                    {suppliers.map(sup => <option key={sup._id} value={sup._id}>{sup.businessName}</option>)}
+                  </select>
+                  {!formData.id && (
+                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                      If selected, this amount will automatically be added as a Payment in the Supplier's Ledger.
                     </p>
                   )}
                 </div>
