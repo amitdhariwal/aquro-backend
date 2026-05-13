@@ -3,6 +3,7 @@ import { Plus, Receipt, IndianRupee, PieChart, Filter, Calendar, X, Trash2, Edit
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [totalReceived, setTotalReceived] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState('All');
@@ -29,6 +30,7 @@ export default function Expenses() {
       category: 'Miscellaneous',
       amount: '',
       paymentMode: 'Cash',
+      employeeId: '',
       notes: ''
     };
   }
@@ -40,11 +42,16 @@ export default function Expenses() {
   const fetchExpenses = async () => {
     try {
       const baseUrl = import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com';
-      const [resExp, resPay, resCust] = await Promise.all([
+      const [resExp, resPay, resCust, resEmp] = await Promise.all([
         fetch(`${baseUrl}/api/expenses`),
         fetch(`${baseUrl}/api/customers/payments/all`),
-        fetch(`${baseUrl}/api/customers`)
+        fetch(`${baseUrl}/api/customers`),
+        fetch(`${baseUrl}/api/employees`)
       ]);
+
+      if (resEmp.ok) {
+        setEmployees(await resEmp.json());
+      }
 
       if (resPay.ok && resCust.ok) {
         const payments = await resPay.json();
@@ -87,6 +94,25 @@ export default function Expenses() {
       });
 
       if (response.ok) {
+        if (!isEdit && formData.employeeId) {
+          try {
+            await fetch(`${baseUrl}/api/employees/payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                employeeId: formData.employeeId,
+                amount: amountVal,
+                date: formData.date,
+                type: 'Debit', // Debit = Given to employee (advance/salary)
+                paymentMode: formData.paymentMode,
+                notes: `Expense Ref: ${formData.title}`
+              })
+            });
+          } catch (e) {
+            console.error('Error linking to employee ledger:', e);
+          }
+        }
+        
         fetchExpenses();
         setIsModalOpen(false);
         setFormData(getInitialForm());
@@ -339,6 +365,24 @@ export default function Expenses() {
                   <select className="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-red-500 focus:border-red-500" value={formData.paymentMode} onChange={e => setFormData({...formData, paymentMode: e.target.value})}>
                     {paymentModes.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Link to Employee (Optional)</label>
+                  <select 
+                    disabled={!!formData.id}
+                    className="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-red-500 focus:border-red-500 bg-slate-50" 
+                    value={formData.employeeId || ''} 
+                    onChange={e => setFormData({...formData, employeeId: e.target.value})}
+                  >
+                    <option value="">-- No Employee (General Expense) --</option>
+                    {employees.map(emp => <option key={emp._id} value={emp._id}>{emp.name} ({emp.post})</option>)}
+                  </select>
+                  {!formData.id && (
+                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                      If selected, this amount will automatically be added as an Advance/Payment in the Employee's Ledger.
+                    </p>
+                  )}
                 </div>
 
                 <div className="md:col-span-2">
