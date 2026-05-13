@@ -10,7 +10,7 @@ export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ isNew: false, isEdit: false, id: '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], customerId: '', labelSize: '', isGroupAdd: false, groupItems: [] });
+  const [formData, setFormData] = useState({ isNew: false, isEdit: false, isCustomLabel: false, isOther: false, id: '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], customerId: '', labelSize: '', isGroupAdd: false, groupItems: [] });
   const [suppliersList, setSuppliersList] = useState([]);
   const [customers, setCustomers] = useState([]);
   
@@ -125,7 +125,7 @@ export default function Inventory() {
           });
         }
       } else if (formData.isNew) {
-        const newId = `inv-${Date.now()}`;
+        const newId = formData.isCustomLabel ? `inv-customlbl-${Date.now()}` : `inv-other-${Date.now()}`;
         const newItemRes = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/inventory', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -135,10 +135,10 @@ export default function Inventory() {
             current: qtyNum, 
             minimum: parseInt(formData.minimum) || 500, 
             unit: 'pcs',
-            isCustomLabel: !!formData.customerId,
-            customerId: formData.customerId || undefined,
-            customerName: customers.find(c => c._id === formData.customerId)?.businessName || customers.find(c => c._id === formData.customerId)?.name || undefined,
-            labelSize: formData.labelSize || undefined
+            isCustomLabel: formData.isCustomLabel,
+            customerId: formData.isCustomLabel && formData.customerId ? formData.customerId : undefined,
+            customerName: formData.isCustomLabel && formData.customerId ? (customers.find(c => c._id === formData.customerId)?.businessName || customers.find(c => c._id === formData.customerId)?.name) : undefined,
+            labelSize: formData.isCustomLabel ? formData.labelSize : undefined
           })
         });
         
@@ -175,7 +175,7 @@ export default function Inventory() {
       
       await loadInventory();
       setIsModalOpen(false);
-      setFormData({ isNew: false, isEdit: false, id: stockItems[0]?.id || '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], customerId: '', labelSize: '', isGroupAdd: false, groupItems: [] });
+      setFormData({ isNew: false, isEdit: false, isCustomLabel: false, id: stockItems[0]?.id || '', name: '', qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], customerId: '', labelSize: '', isGroupAdd: false, groupItems: [] });
       setSelectedItem(null);
     } catch (error) {
       console.error('Error saving inventory:', error);
@@ -463,9 +463,9 @@ export default function Inventory() {
                   onClick={() => {
                     if (selectedItem.isGroup) {
                       const firstItem = selectedItem.items[0];
-                      setFormData({ isNew: false, isEdit: false, id: firstItem.id, name: firstItem.name, qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], isGroupAdd: true, groupItems: selectedItem.items, customerId: '', labelSize: '' });
+                      setFormData({ isNew: false, isEdit: false, isCustomLabel: false, id: firstItem.id, name: firstItem.name, qty: '', minimum: '500', supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], isGroupAdd: true, groupItems: selectedItem.items, customerId: '', labelSize: '' });
                     } else {
-                      setFormData({ isNew: false, isEdit: false, id: selectedItem.id, name: selectedItem.name, qty: '', minimum: selectedItem.minimum.toString(), supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], isGroupAdd: false, groupItems: [], customerId: '', labelSize: '' });
+                      setFormData({ isNew: false, isEdit: false, isCustomLabel: false, id: selectedItem.id, name: selectedItem.name, qty: '', minimum: selectedItem.minimum.toString(), supplier: '', notes: '', amount: '', date: new Date().toISOString().split('T')[0], isGroupAdd: false, groupItems: [], customerId: '', labelSize: '' });
                     }
                     setIsModalOpen(true);
                   }}
@@ -550,12 +550,12 @@ export default function Inventory() {
             
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {!formData.isEdit && (
-                <div className="flex items-center gap-4 mb-2">
+                <div className="flex flex-wrap items-center gap-4 mb-2">
                   <label className="flex items-center gap-2 text-sm text-slate-600">
                     <input 
                       type="radio" 
                       checked={!formData.isNew} 
-                      onChange={() => setFormData({...formData, isNew: false})} 
+                      onChange={() => setFormData({...formData, isNew: false, isCustomLabel: false})} 
                       className="text-aquro-600"
                     />
                     Existing Item
@@ -563,11 +563,20 @@ export default function Inventory() {
                   <label className="flex items-center gap-2 text-sm text-slate-600">
                     <input 
                       type="radio" 
-                      checked={formData.isNew} 
-                      onChange={() => setFormData({...formData, isNew: true})} 
+                      checked={formData.isNew && formData.isCustomLabel} 
+                      onChange={() => setFormData({...formData, isNew: true, isCustomLabel: true, name: ''})} 
                       className="text-aquro-600"
                     />
                     New Item (Custom Label)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-slate-600">
+                    <input 
+                      type="radio" 
+                      checked={formData.isNew && !formData.isCustomLabel} 
+                      onChange={() => setFormData({...formData, isNew: true, isCustomLabel: false, name: ''})} 
+                      className="text-aquro-600"
+                    />
+                    New Item (Other)
                   </label>
                 </div>
               )}
@@ -602,7 +611,7 @@ export default function Inventory() {
                 </div>
               ) : (
                 <>
-                  {formData.isNew ? (
+                  {formData.isNew && formData.isCustomLabel ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
@@ -647,7 +656,7 @@ export default function Inventory() {
                       <input 
                         type="text" 
                         required
-                        placeholder="e.g. Custom Label - Taj Hotel"
+                        placeholder={formData.isEdit ? "Item Name" : "e.g. New Chemical XYZ"}
                         className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:ring-aquro-500 focus:border-aquro-500"
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
