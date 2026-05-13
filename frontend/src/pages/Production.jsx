@@ -661,7 +661,7 @@ export default function Production() {
                       type="radio" 
                       name="labelType" 
                       checked={formData.label === 'Custom'}
-                      onChange={() => setFormData({...formData, label: 'Custom'})}
+                      onChange={() => setFormData({...formData, label: 'Custom', clientName: formData.clientName || (customers.length > 0 ? customers[0].name : '')})}
                       className="text-purple-600 focus:ring-purple-500"
                     />
                     Custom Label
@@ -678,6 +678,7 @@ export default function Production() {
                     value={formData.clientName}
                     onChange={(e) => setFormData({...formData, clientName: e.target.value})}
                   >
+                    <option value="" disabled>-- Select Customer --</option>
                     {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </div>
