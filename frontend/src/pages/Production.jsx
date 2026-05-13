@@ -84,7 +84,9 @@ export default function Production() {
           } else if (entry.label === 'Standard' && item.customId === `inv-std-lbl-${entry.size}`) {
             newCurrent = Math.max(0, item.current + qtyToAdjust);
             shouldUpdate = true;
-          } else if (entry.label === 'Custom' && item.isCustomLabel && item.customerName === entry.clientName && item.labelSize === entry.size) {
+          } else if (entry.label === 'Custom' && item.isCustomLabel && 
+              (item.customerName || '').trim().toLowerCase() === (entry.clientName || '').trim().toLowerCase() && 
+              (item.labelSize || '').trim().toLowerCase() === (entry.size || '').trim().toLowerCase()) {
             newCurrent = Math.max(0, item.current + qtyToAdjust);
             shouldUpdate = true;
           }
@@ -141,7 +143,10 @@ export default function Production() {
         if (formData.label === 'Standard') {
           reqLabel = inventory.find(i => i.customId === `inv-std-lbl-${formData.size}`);
         } else {
-          reqLabel = inventory.find(i => i.isCustomLabel && i.customerName === formData.clientName && i.labelSize === formData.size);
+          reqLabel = inventory.find(i => i.isCustomLabel && 
+            (i.customerName || '').trim().toLowerCase() === (formData.clientName || '').trim().toLowerCase() && 
+            (i.labelSize || '').trim().toLowerCase() === (formData.size || '').trim().toLowerCase()
+          );
         }
 
         let oldBottleQty = 0; let oldCapQty = 0; let oldLabelQty = 0;
@@ -153,10 +158,10 @@ export default function Production() {
         }
 
         const errors = [];
-        if (!reqBottle || (reqBottle.current + oldBottleQty) < q) errors.push(`• Not enough ${formData.size} empty bottles (Available: ${reqBottle?.current || 0})`);
-        if (!reqCap || (reqCap.current + oldCapQty) < q) errors.push(`• Not enough ${formData.capColor} caps (Available: ${reqCap?.current || 0})`);
-        if (formData.label === 'Standard' && (!reqLabel || (reqLabel.current + oldLabelQty) < q)) errors.push(`• Not enough AQURO Standard Labels for ${formData.size} (Available: ${reqLabel?.current || 0})`);
-        if (formData.label === 'Custom' && (!reqLabel || (reqLabel.current + oldLabelQty) < q)) errors.push(`• Not enough Custom Labels for ${formData.clientName} (${formData.size}) (Available: ${reqLabel?.current || 0})`);
+        if (!reqBottle || (reqBottle.current + oldBottleQty) < q) errors.push(`• Need ${q} empty bottles (${formData.size}), but only ${reqBottle ? reqBottle.current + oldBottleQty : 0} available`);
+        if (!reqCap || (reqCap.current + oldCapQty) < q) errors.push(`• Need ${q} caps (${formData.capColor}), but only ${reqCap ? reqCap.current + oldCapQty : 0} available`);
+        if (formData.label === 'Standard' && (!reqLabel || (reqLabel.current + oldLabelQty) < q)) errors.push(`• Need ${q} AQURO Standard Labels (${formData.size}), but only ${reqLabel ? reqLabel.current + oldLabelQty : 0} available`);
+        if (formData.label === 'Custom' && (!reqLabel || (reqLabel.current + oldLabelQty) < q)) errors.push(`• Need ${q} Custom Labels for ${formData.clientName} (${formData.size}), but only ${reqLabel ? reqLabel.current + oldLabelQty : 0} available`);
 
         if (errors.length > 0) {
           alert("INSUFFICIENT STOCK FOR PRODUCTION:\n\n" + errors.join('\n') + "\n\nPlease add stock in the Inventory page first.");
