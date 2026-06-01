@@ -507,7 +507,6 @@ export default function WaterQuality() {
                     className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-aquro-400 focus:border-transparent"
                   />
                 </div>
-                </div>
               </div>
 
               {/* Batch Number (auto-filled from Production, readonly if pre-filled) */}
@@ -576,7 +575,6 @@ export default function WaterQuality() {
                       )}
                     </div>
                   ))}
-                </div>
                 </div>
               </div>
 
