@@ -58,14 +58,17 @@ const PARAMETERS = [
 function getParamStatus(key, value) {
   const p = PARAMETERS.find((x) => x.key === key);
   if (!p || value === '' || value === null || value === undefined) return 'unknown';
+  
+  const strVal = String(value).trim().toLowerCase();
+  if (strVal === 'nt' || strVal === 'n/a') return 'unknown';
+
   // Microbiological: Absent = pass, anything else = fail
   if (p.isMicro) {
-    const strVal = String(value).trim().toLowerCase();
     if (strVal === 'absent' || strVal === 'nd' || strVal === '0') return 'pass';
     return 'fail';
   }
   const v = parseFloat(value);
-  if (isNaN(v)) return p.bestRange === 'ND' ? 'pass' : 'unknown';
+  if (isNaN(v)) return (p.bestRange === 'ND' || strVal === 'nd') ? 'pass' : 'unknown';
   if (v >= p.min && v <= p.max) return 'pass';
   // Warning zone: within 10% beyond limit
   if (p.max > 0 && v > p.max && v <= p.max * 1.1) return 'warning';
@@ -76,7 +79,11 @@ function getOverallStatus(record) {
   const statuses = PARAMETERS.map((p) => getParamStatus(p.key, record[p.key]));
   if (statuses.some((s) => s === 'fail')) return 'fail';
   if (statuses.some((s) => s === 'warning')) return 'warning';
-  if (statuses.every((s) => s === 'pass')) return 'pass';
+  
+  const testedStatuses = statuses.filter(s => s !== 'unknown');
+  if (testedStatuses.length > 0 && testedStatuses.every((s) => s === 'pass')) return 'pass';
+  if (testedStatuses.length === 0) return 'pending';
+  
   return 'pending';
 }
 
@@ -88,16 +95,21 @@ const STATUS_CONFIG = {
   unknown: { label: '—', color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-100', icon: ClipboardList },
 };
 
-// ─── Empty form ────────────────────────────────────────────────────────────────
-const emptyForm = () => ({
-  date: new Date().toISOString().split('T')[0],
-  sampleId: '',
-  batchNumber: '',
-  source: 'RO Plant Output',
-  testedBy: '',
-  ...Object.fromEntries(PARAMETERS.map((p) => [p.key, ''])),
-  remarks: '',
-});
+const emptyForm = () => {
+  let defaults = {};
+  try {
+    defaults = JSON.parse(localStorage.getItem('aquro_wq_defaults')) || {};
+  } catch(e) {}
+  return {
+    date: new Date().toISOString().split('T')[0],
+    sampleId: '',
+    batchNumber: '',
+    source: 'RO Plant Output',
+    testedBy: '',
+    ...Object.fromEntries(PARAMETERS.map((p) => [p.key, defaults[p.key] || ''])),
+    remarks: '',
+  };
+};
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function WaterQuality() {
@@ -125,6 +137,15 @@ export default function WaterQuality() {
 
   const handleChange = (e) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  };
+
+  const handleSaveDefaults = () => {
+    const defaults = {};
+    PARAMETERS.forEach(p => {
+      if (form[p.key]) defaults[p.key] = form[p.key];
+    });
+    localStorage.setItem('aquro_wq_defaults', JSON.stringify(defaults));
+    alert('Badiya! Ye values ab naye reports me automatically fill ho jayengi.');
   };
 
   const handleAdd = async () => {
@@ -623,9 +644,16 @@ export default function WaterQuality() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={handleSaveDefaults}
+                className="px-4 py-2 text-aquro-600 hover:bg-aquro-100 rounded-xl text-sm font-semibold transition-colors"
+              >
+                Set as Default Values
+              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowModal(false)}
                 className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
               >
                 Cancel
@@ -636,6 +664,7 @@ export default function WaterQuality() {
               >
                 Save Test Report
               </button>
+              </div>
             </div>
           </div>
         </div>
