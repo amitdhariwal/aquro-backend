@@ -108,7 +108,9 @@ export default function WaterQuality() {
       const res = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/water-quality');
       if (res.ok) {
         const data = await res.json();
-        setRecords(data.map(d => ({ ...d, id: d._id })));
+        const parsed = data.map(d => ({ ...d, id: d._id }));
+        parsed.sort((a, b) => new Date(b.date) - new Date(a.date));
+        setRecords(parsed);
       }
     } catch (error) {
       console.error(error);
