@@ -21,39 +21,22 @@ import {
 } from 'lucide-react';
 
 
-// ─── Water Quality Parameters (Excel: Aquro_Water_Parameters_Complete.xlsx) ──
+// ─── Water Quality Parameters (Basic Lab Testable — IS 10500 / IS 14543) ──────
 const PARAMETERS = [
-  // Physical / Chemical
-  { key: 'ph',          label: 'pH Value',           unit: '',      min: 6.5,   max: 8.5,   icon: '⚗️',  bisLimit: '6.5 – 8.5',       bestRange: '7.0 – 7.5' },
-  { key: 'tds',         label: 'TDS',                unit: 'mg/L',  min: 0,     max: 500,   icon: '💧',  bisLimit: 'Max 500',          bestRange: '80 – 150' },
-  { key: 'turbidity',   label: 'Turbidity',          unit: 'NTU',   min: 0,     max: 1,     icon: '🌫️', bisLimit: 'Max 1',            bestRange: '< 0.5' },
-  { key: 'hardness',    label: 'Total Hardness',     unit: 'mg/L',  min: 0,     max: 200,   icon: '🪨',  bisLimit: 'Max 200',          bestRange: '50 – 100' },
-  { key: 'calcium',     label: 'Calcium',            unit: 'mg/L',  min: 0,     max: 75,    icon: '🦴',  bisLimit: 'Max 75',           bestRange: '20 – 40' },
-  { key: 'magnesium',   label: 'Magnesium',          unit: 'mg/L',  min: 0,     max: 30,    icon: '⚙️', bisLimit: 'Max 30',           bestRange: '5 – 15' },
-  { key: 'alkalinity',  label: 'Alkalinity',         unit: 'mg/L',  min: 0,     max: 200,   icon: '🧬',  bisLimit: 'Max 200',          bestRange: '40 – 80' },
-  { key: 'chloride',    label: 'Chloride',           unit: 'mg/L',  min: 0,     max: 250,   icon: '🧪',  bisLimit: 'Max 250',          bestRange: '< 50' },
-  { key: 'sulphate',    label: 'Sulphate',           unit: 'mg/L',  min: 0,     max: 200,   icon: '🌡️', bisLimit: 'Max 200',          bestRange: '< 50' },
-  { key: 'nitrate',     label: 'Nitrate',            unit: 'mg/L',  min: 0,     max: 45,    icon: '🌿',  bisLimit: 'Max 45',           bestRange: '< 10' },
-  { key: 'fluoride',    label: 'Fluoride',           unit: 'mg/L',  min: 0,     max: 1.0,   icon: '⚡',  bisLimit: 'Max 1.0',          bestRange: '0.5 – 0.8' },
-  { key: 'sodium',      label: 'Sodium',             unit: 'mg/L',  min: 0,     max: 200,   icon: '🧂',  bisLimit: 'As per source',    bestRange: 'Low' },
-  { key: 'potassium',   label: 'Potassium',          unit: 'mg/L',  min: 0,     max: 100,   icon: '🍌',  bisLimit: 'As per source',    bestRange: 'Low' },
-  { key: 'iron',        label: 'Iron',               unit: 'mg/L',  min: 0,     max: 0.1,   icon: '🔩',  bisLimit: 'Max 0.1',          bestRange: '< 0.03' },
-  { key: 'manganese',   label: 'Manganese',          unit: 'mg/L',  min: 0,     max: 0.05,  icon: '🔘',  bisLimit: 'Max 0.05',         bestRange: '< 0.01' },
-  { key: 'copper',      label: 'Copper',             unit: 'mg/L',  min: 0,     max: 0.05,  icon: '🟤',  bisLimit: 'Max 0.05',         bestRange: '< 0.01' },
-  { key: 'zinc',        label: 'Zinc',               unit: 'mg/L',  min: 0,     max: 5,     icon: '🔵',  bisLimit: 'Max 5',            bestRange: '< 1' },
-  { key: 'lead',        label: 'Lead',               unit: 'mg/L',  min: 0,     max: 0.01,  icon: '⬛',  bisLimit: 'Max 0.01',         bestRange: 'ND' },
-  { key: 'arsenic',     label: 'Arsenic',            unit: 'mg/L',  min: 0,     max: 0.01,  icon: '☠️', bisLimit: 'Max 0.01',         bestRange: 'ND' },
-  { key: 'cadmium',     label: 'Cadmium',            unit: 'mg/L',  min: 0,     max: 0.003, icon: '🟡',  bisLimit: 'Max 0.003',        bestRange: 'ND' },
-  { key: 'chromium',    label: 'Chromium',           unit: 'mg/L',  min: 0,     max: 0.05,  icon: '🟠',  bisLimit: 'Max 0.05',         bestRange: 'ND' },
-  { key: 'mercury',     label: 'Mercury',            unit: 'mg/L',  min: 0,     max: 0.001, icon: '💊',  bisLimit: 'Max 0.001',        bestRange: 'ND' },
-  { key: 'residualOzone', label: 'Residual Ozone',  unit: 'mg/L',  min: 0.1,   max: 0.4,   icon: '🌀',  bisLimit: '0.1 – 0.4',        bestRange: '0.2 – 0.3' },
-  // Microbiological
-  { key: 'coliform',    label: 'Total Coliform',     unit: '/250mL', min: 0,    max: 0,     icon: '🦠',  bisLimit: 'Absent/250 mL',    bestRange: 'Absent', isMicro: true },
-  { key: 'ecoli',       label: 'E. coli',            unit: '/250mL', min: 0,    max: 0,     icon: '🔬',  bisLimit: 'Absent/250 mL',    bestRange: 'Absent', isMicro: true },
-  { key: 'pseudomonas', label: 'Pseudomonas',        unit: '/250mL', min: 0,    max: 0,     icon: '🧫',  bisLimit: 'Absent/250 mL',    bestRange: 'Absent', isMicro: true },
-  { key: 'salmonella',  label: 'Salmonella',         unit: '/250mL', min: 0,    max: 0,     icon: '🦟',  bisLimit: 'Absent',           bestRange: 'Absent', isMicro: true },
-  { key: 'tpc',         label: 'TPC',                unit: 'CFU/mL', min: 0,    max: 10,    icon: '🧪',  bisLimit: 'Very Low',         bestRange: '< 10 CFU/mL' },
+  { key: 'ph',         label: 'pH Value',       unit: '',      min: 6.5, max: 8.5,  bisLimit: '6.5 – 8.5',   bestRange: '7.0 – 7.5' },
+  { key: 'tds',        label: 'TDS',            unit: 'mg/L',  min: 0,   max: 500,  bisLimit: 'Max 500',     bestRange: '80 – 150'  },
+  { key: 'turbidity',  label: 'Turbidity',      unit: 'NTU',   min: 0,   max: 1,    bisLimit: 'Max 1',       bestRange: '< 0.5'     },
+  { key: 'hardness',   label: 'Total Hardness', unit: 'mg/L',  min: 0,   max: 200,  bisLimit: 'Max 200',     bestRange: '50 – 100'  },
+  { key: 'calcium',    label: 'Calcium',        unit: 'mg/L',  min: 0,   max: 75,   bisLimit: 'Max 75',      bestRange: '20 – 40'   },
+  { key: 'magnesium',  label: 'Magnesium',      unit: 'mg/L',  min: 0,   max: 30,   bisLimit: 'Max 30',      bestRange: '5 – 15'    },
+  { key: 'alkalinity', label: 'Alkalinity',     unit: 'mg/L',  min: 0,   max: 200,  bisLimit: 'Max 200',     bestRange: '40 – 80'   },
+  { key: 'chloride',   label: 'Chloride',       unit: 'mg/L',  min: 0,   max: 250,  bisLimit: 'Max 250',     bestRange: '< 50'      },
+  { key: 'sulphate',   label: 'Sulphate',       unit: 'mg/L',  min: 0,   max: 200,  bisLimit: 'Max 200',     bestRange: '< 50'      },
+  { key: 'nitrate',    label: 'Nitrate',        unit: 'mg/L',  min: 0,   max: 45,   bisLimit: 'Max 45',      bestRange: '< 10'      },
+  { key: 'fluoride',   label: 'Fluoride',       unit: 'mg/L',  min: 0,   max: 1.0,  bisLimit: 'Max 1.0',     bestRange: '0.5 – 0.8' },
+  { key: 'iron',       label: 'Iron',           unit: 'mg/L',  min: 0,   max: 0.3,  bisLimit: 'Max 0.3',     bestRange: '< 0.1'     },
 ];
+
 
 function getParamStatus(key, value) {
   const p = PARAMETERS.find((x) => x.key === key);
@@ -196,14 +179,9 @@ export default function WaterQuality() {
     const statusColors = { pass: '#059669', fail: '#dc2626', warning: '#d97706', pending: '#64748b', unknown: '#94a3b8' };
 
     const reportNo = `AQURO/WQ/${record.batchNumber || record.sampleId}/${new Date().getFullYear()}`;
-    const revNo = 'R00';
-    const genDate = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+    const genDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
     const samplingDate = record.date;
-
-    const HEAVY_METALS = ['lead','arsenic','cadmium','chromium','mercury'];
-
-    // Lookup bisLimit override for Sodium/Potassium
-    const bisLimitOverride = { sodium: 'No BIS Limit Specified', potassium: 'No BIS Limit Specified' };
+    const testedBy = record.testedBy || 'Amit Kumar';
 
     const TEST_METHODS = {
       ph: 'IS 3025 (Part 11)',
@@ -217,68 +195,39 @@ export default function WaterQuality() {
       sulphate: 'IS 3025 (Part 24)',
       nitrate: 'IS 3025 (Part 34)',
       fluoride: 'IS 3025 (Part 60)',
-      sodium: 'IS 3025 (Part 45)',
-      potassium: 'IS 3025 (Part 45)',
       iron: 'IS 3025 (Part 53)',
-      manganese: 'IS 3025 (Part 59)',
-      copper: 'IS 3025 (Part 42)',
-      zinc: 'IS 3025 (Part 49)',
-      lead: 'IS 3025 (Part 55)',
-      arsenic: 'IS 3025 (Part 37)',
-      cadmium: 'IS 3025 (Part 41)',
-      chromium: 'IS 3025 (Part 52)',
-      mercury: 'IS 3025 (Part 48)',
-      residualOzone: 'IS 3025',
-      coliform: 'IS 1622',
-      ecoli: 'IS 1622',
-      pseudomonas: 'IS 13428',
-      salmonella: 'IS 5887',
-      tpc: 'IS 5401',
     };
 
-    const buildRows = (params) => params.map(p => {
+    const tableRows = PARAMETERS.map(p => {
       const rawVal = record[p.key];
       const strVal = rawVal !== undefined && rawVal !== null && rawVal !== '' ? String(rawVal).trim() : '';
-      
-      // NT handling: heavy metals default to NT if value is 'ND' and no explicit test data
-      const isHeavyMetal = HEAVY_METALS.includes(p.key);
-      let displayVal, status, statusLabel, statusColor;
 
-      if (strVal === '' || strVal.toLowerCase() === 'nt' || strVal.toLowerCase() === 'n/a' || (isHeavyMetal && strVal.toLowerCase() === 'nd')) {
-        displayVal = 'NT (Not Tested)';
-        status = 'unknown';
+      let displayVal, statusLabel, statusColor;
+      if (strVal === '' || strVal.toLowerCase() === 'nt' || strVal.toLowerCase() === 'n/a') {
+        displayVal = 'NT';
         statusLabel = 'NT';
         statusColor = '#94a3b8';
       } else {
         displayVal = `${strVal}${p.unit ? ' ' + p.unit : ''}`;
-        status = getParamStatus(p.key, rawVal);
-        statusLabel = status === 'pass' ? 'PASS' : status === 'fail' ? 'FAIL' : status === 'warning' ? 'WARN' : '—';
-        statusColor = statusColors[status] || '#94a3b8';
+        const s = getParamStatus(p.key, rawVal);
+        statusLabel = s === 'pass' ? 'PASS' : s === 'fail' ? 'FAIL' : s === 'warning' ? 'WARN' : 'NT';
+        statusColor = statusColors[s] || '#94a3b8';
       }
-
-      const bisLimitDisplay = bisLimitOverride[p.key] || p.bisLimit || '—';
-      const method = TEST_METHODS[p.key] || 'IS 3025';
 
       return `<tr>
         <td>${p.label}</td>
+        <td style="text-align:center;">${p.bisLimit}</td>
         <td style="text-align:center;font-weight:600;">${displayVal}</td>
-        <td style="text-align:center;">${bisLimitDisplay}</td>
-        <td style="text-align:center;">${p.bestRange || '—'}</td>
-        <td style="text-align:center;font-size:9px;color:#475569;">${method}</td>
+        <td style="text-align:center;font-size:9px;color:#475569;">${TEST_METHODS[p.key] || 'IS 3025'}</td>
         <td style="text-align:center;">
-          <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-weight:700;font-size:10px;color:#fff;background:${statusColor};">${statusLabel}</span>
+          <span style="display:inline-block;padding:1px 8px;border-radius:4px;font-weight:700;font-size:10px;color:#fff;background:${statusColor};">${statusLabel}</span>
         </td>
       </tr>`;
     }).join('');
 
-    const chemParams = PARAMETERS.filter(p => !p.isMicro);
-    const microParams = PARAMETERS.filter(p => p.isMicro);
-    const chemRowsHtml = buildRows(chemParams);
-    const microRowsHtml = buildRows(microParams);
-
     const testedCount = PARAMETERS.filter(p => {
       const v = String(record[p.key] || '').trim().toLowerCase();
-      return v !== '' && v !== 'nt' && v !== 'n/a' && !(HEAVY_METALS.includes(p.key) && v === 'nd');
+      return v !== '' && v !== 'nt' && v !== 'n/a';
     }).length;
 
     const html = `<!DOCTYPE html>
@@ -288,227 +237,160 @@ export default function WaterQuality() {
   <title>Water Quality Report — ${record.sampleId}</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; color:#1e293b; background:#fff; font-size:11px; }
-    
-    /* Header */
-    .page-header { background:linear-gradient(135deg,#0369a1,#0ea5e9); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
-    .company-info h1 { font-size:20px; font-weight:800; letter-spacing:1px; }
-    .company-info p { font-size:9.5px; opacity:.85; margin-top:2px; }
-    .report-meta { text-align:right; font-size:9px; opacity:.9; line-height:1.7; }
-    .report-meta strong { font-size:11px; display:block; }
-
-    /* Title bar */
-    .title-bar { background:#f0f9ff; border-bottom:2px solid #0ea5e9; padding:7px 20px; display:flex; align-items:center; justify-content:space-between; }
-    .title-bar h2 { font-size:13px; font-weight:700; color:#0369a1; }
-    .ref-standards { font-size:9px; color:#64748b; text-align:right; line-height:1.6; }
-
-    /* Body */
-    .body-wrap { padding:12px 20px; }
-    .divider { height:1.5px; background:linear-gradient(to right,#0ea5e9,#e2e8f0); margin:10px 0; }
-
-    /* Info grid */
-    .info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px 16px; margin-bottom:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 14px; }
-    .info-item label { font-size:8.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; }
-    .info-item p { font-size:11px; font-weight:600; color:#0f172a; margin-top:1px; }
-    .badge { display:inline-block; padding:2px 10px; border-radius:4px; font-size:10px; font-weight:700; color:#fff; }
-
-    /* Tables */
-    .section-title { font-size:10px; font-weight:700; color:#0369a1; text-transform:uppercase; letter-spacing:.6px; margin:10px 0 4px; padding-bottom:3px; border-bottom:1.5px solid #bae6fd; }
-    table { width:100%; border-collapse:collapse; font-size:10px; }
+    body { font-family: Arial, sans-serif; color:#1e293b; background:#fff; font-size:10.5px; }
+    .page-header { background:linear-gradient(135deg,#0369a1,#0ea5e9); color:#fff; padding:11px 18px; display:flex; align-items:center; justify-content:space-between; }
+    .company-info h1 { font-size:18px; font-weight:800; letter-spacing:1px; }
+    .company-info p { font-size:9px; opacity:.88; margin-top:1px; line-height:1.5; }
+    .report-meta { text-align:right; font-size:8.5px; opacity:.92; line-height:1.7; }
+    .report-meta strong { font-size:10.5px; display:block; }
+    .title-bar { background:#f0f9ff; border-bottom:2px solid #0ea5e9; padding:5px 18px; display:flex; align-items:center; justify-content:space-between; }
+    .title-bar h2 { font-size:11.5px; font-weight:700; color:#0369a1; }
+    .ref-std { font-size:8.5px; color:#64748b; }
+    .body-wrap { padding:9px 18px; }
+    .info-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:5px 12px; margin-bottom:9px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:5px; padding:8px 12px; }
+    .info-item label { font-size:7.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.4px; }
+    .info-item p { font-size:10px; font-weight:600; color:#0f172a; margin-top:1px; }
+    .badge { display:inline-block; padding:1px 8px; border-radius:4px; font-size:9.5px; font-weight:700; color:#fff; }
+    .section-title { font-size:9.5px; font-weight:700; color:#0369a1; text-transform:uppercase; letter-spacing:.6px; margin:8px 0 3px; padding-bottom:2px; border-bottom:1.5px solid #bae6fd; }
+    table { width:100%; border-collapse:collapse; font-size:9.5px; }
     thead tr { background:#0369a1; color:#fff; }
-    thead th { padding:5px 8px; text-align:left; font-weight:700; font-size:9.5px; }
+    thead th { padding:4.5px 7px; text-align:left; font-weight:700; font-size:9px; }
     tbody tr:nth-child(even) { background:#f0f9ff; }
-    tbody td { padding:4px 8px; border-bottom:1px solid #e2e8f0; vertical-align:middle; }
-    tbody tr:hover { background:#e0f2fe; }
+    tbody td { padding:3.5px 7px; border-bottom:1px solid #e2e8f0; vertical-align:middle; }
+    .legend { margin-top:7px; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:5px 10px; font-size:8.5px; color:#78350f; }
+    .disclaimer { margin-top:5px; background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #0ea5e9; border-radius:4px; padding:5px 10px; font-size:8.5px; color:#475569; font-style:italic; }
+    .remarks-box { background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #0ea5e9; border-radius:4px; padding:6px 10px; margin-top:7px; }
+    .remarks-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:3px 16px; }
+    .remarks-item label { font-size:7.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; }
+    .remarks-item p { font-size:9.5px; color:#1e293b; }
+    .sig-section { margin-top:9px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+    .sig-box { border-top:1.5px solid #94a3b8; padding-top:5px; }
+    .sig-box .sig-line { height:24px; border:1px dashed #cbd5e1; border-radius:3px; margin-bottom:4px; background:#f8fafc; }
+    .sig-box label { font-size:7.5px; font-weight:700; color:#64748b; text-transform:uppercase; display:block; }
+    .sig-box p { font-size:9.5px; color:#1e293b; font-weight:600; }
+    .stamp-box { border:2px dashed #0ea5e9; border-radius:6px; width:75px; height:55px; display:flex; align-items:center; justify-content:center; color:#0ea5e9; font-size:7.5px; font-weight:700; text-align:center; }
+    .page-footer { margin-top:9px; background:#f1f5f9; border-top:1.5px solid #e2e8f0; padding:5px 18px; display:flex; justify-content:space-between; align-items:center; }
+    .page-footer span { font-size:7.5px; color:#94a3b8; }
 
-    /* Remarks */
-    .remarks-box { background:#f8fafc; border:1px solid #e2e8f0; border-left:4px solid #0ea5e9; border-radius:6px; padding:9px 13px; margin-top:10px; }
-    .remarks-box .rhead { font-size:9.5px; font-weight:700; color:#0369a1; text-transform:uppercase; margin-bottom:5px; }
-    .remarks-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; }
-    .remarks-item label { font-size:8.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; }
-    .remarks-item p { font-size:10px; color:#1e293b; }
-
-    /* Legend */
-    .legend { margin-top:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:5px; padding:7px 12px; font-size:9px; color:#78350f; }
-    .legend strong { color:#92400e; }
-
-    /* Disclaimer */
-    .disclaimer { margin-top:8px; background:#fef2f2; border:1px solid #fecaca; border-radius:5px; padding:7px 12px; font-size:9px; color:#7f1d1d; font-style:italic; }
-
-    /* Signature section */
-    .sig-section { margin-top:12px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
-    .sig-box { border-top:1.5px solid #64748b; padding-top:6px; }
-    .sig-box .sig-line { height:30px; border:1px dashed #cbd5e1; border-radius:4px; margin-bottom:5px; background:#f8fafc; display:flex; align-items:center; justify-content:center; color:#cbd5e1; font-size:9px; }
-    .sig-box label { font-size:8.5px; font-weight:700; color:#64748b; text-transform:uppercase; display:block; }
-    .sig-box p { font-size:10px; color:#1e293b; font-weight:600; }
-
-    /* Stamp area */
-    .stamp-area { border:2px dashed #0ea5e9; border-radius:8px; width:90px; height:70px; display:flex; align-items:center; justify-content:center; color:#0ea5e9; font-size:8px; font-weight:700; text-align:center; }
-
-    /* Footer */
-    .page-footer { margin-top:14px; background:#f1f5f9; border-top:1.5px solid #e2e8f0; padding:8px 20px; display:flex; justify-content:space-between; align-items:center; }
-    .page-footer .left { font-size:8.5px; color:#64748b; }
-    .page-footer .right { font-size:8.5px; color:#94a3b8; }
-
-    @page { size: A4; margin: 8mm; }
+    @page { size: A4 portrait; margin: 7mm; }
     @media print {
-      body { font-size:10px; }
-      .page-header { padding:10px 16px; }
-      .company-info h1 { font-size:17px; }
-      .body-wrap { padding:8px 16px; }
-      .info-grid { padding:7px 10px; }
-      table { font-size:9px; }
-      thead th { padding:4px 6px; }
-      tbody td { padding:3px 6px; }
-      .sig-section { margin-top:10px; }
+      body { font-size:9.5px; }
+      .body-wrap { padding:6px 14px; }
+      .info-grid { padding:5px 9px; }
+      thead th { padding:3.5px 5px; }
+      tbody td { padding:2.5px 5px; }
+      .sig-section { margin-top:7px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
   <div class="page-header">
     <div class="company-info">
-      <h1>💧 AQURO</h1>
-      <p>Premium Packaged Drinking Water</p>
-      <p style="margin-top:3px;">AQURO Water Pvt. Ltd. | aqurowater.com | contact@aqurowater.com</p>
+      <h1>💧 M/S AQURO WATER</h1>
+      <p>Jagua Khurd, Post Rajabpur, Amroha (U.P.) – 244236</p>
+      <p>Mobile: 8449692599 &nbsp;|&nbsp; Premium Packaged Drinking Water</p>
     </div>
     <div class="report-meta">
       <strong>WATER QUALITY TEST REPORT</strong>
       Report No.: ${reportNo}<br/>
-      Revision: ${revNo}<br/>
-      Page: 1 of 1<br/>
-      Generated: ${genDate}
+      Ref: IS 14543 &amp; IS 10500<br/>
+      Page: 1 of 1 &nbsp;|&nbsp; Generated: ${genDate}
     </div>
   </div>
 
-  <!-- Title bar -->
   <div class="title-bar">
-    <h2>📋 Water Quality Analysis Report — ${record.sampleId}</h2>
-    <div class="ref-standards">
-      <strong>Reference Standards:</strong>
-      IS 14543 (Packaged Drinking Water) &nbsp;|&nbsp; IS 10500 (Drinking Water Specification)
-    </div>
+    <h2>📋 Water Quality Analysis Report &mdash; Sample ID: ${record.sampleId}</h2>
+    <div class="ref-std">IS 14543 (Packaged Drinking Water) &nbsp;|&nbsp; IS 10500 (Drinking Water Spec.)</div>
   </div>
 
   <div class="body-wrap">
 
-    <!-- Info Grid -->
     <div class="info-grid">
       <div class="info-item"><label>Sample ID</label><p>${record.sampleId}</p></div>
+      <div class="info-item"><label>Batch No.</label><p>${record.batchNumber || '—'}</p></div>
       <div class="info-item"><label>Sampling Date</label><p>${samplingDate}</p></div>
       <div class="info-item"><label>Report Date</label><p>${genDate}</p></div>
-      ${record.batchNumber ? `<div class="info-item"><label>Batch Number</label><p>${record.batchNumber}</p></div>` : ''}
       <div class="info-item"><label>Sample Source</label><p>${record.source || '—'}</p></div>
-      <div class="info-item"><label>Tested By</label><p>${record.testedBy || '—'}</p></div>
-      <div class="info-item"><label>Parameters Tested</label><p>${testedCount} / ${PARAMETERS.length}</p></div>
+      <div class="info-item"><label>Tested By</label><p>${testedBy}</p></div>
+      <div class="info-item"><label>Params Tested</label><p>${testedCount} / ${PARAMETERS.length}</p></div>
       <div class="info-item"><label>Overall Result</label>
         <p><span class="badge" style="background:${statusColors[overall]};">${overallCfg.label}</span></p>
       </div>
     </div>
 
-    <div class="divider"></div>
-
-    <!-- Physical & Chemical Parameters -->
-    <div class="section-title">Physical &amp; Chemical Parameters</div>
+    <div class="section-title">Physical &amp; Chemical Parameters (as per IS 10500 / IS 14543)</div>
     <table>
       <thead><tr>
-        <th style="width:22%">Parameter</th>
-        <th style="width:15%;text-align:center;">Result</th>
-        <th style="width:18%;text-align:center;">BIS Limit (IS 10500 / IS 14543)</th>
-        <th style="width:15%;text-align:center;">Best Range</th>
-        <th style="width:18%;text-align:center;">Test Method</th>
-        <th style="width:12%;text-align:center;">Status</th>
+        <th style="width:23%;">Parameter</th>
+        <th style="width:18%;text-align:center;">BIS Limit</th>
+        <th style="width:17%;text-align:center;">Test Result</th>
+        <th style="width:28%;text-align:center;">Test Method</th>
+        <th style="width:14%;text-align:center;">Status</th>
       </tr></thead>
-      <tbody>${chemRowsHtml}</tbody>
+      <tbody>${tableRows}</tbody>
     </table>
 
-    <!-- Microbiological Parameters -->
-    <div class="section-title" style="margin-top:12px;">Microbiological Parameters</div>
-    <table>
-      <thead><tr>
-        <th style="width:22%">Parameter</th>
-        <th style="width:15%;text-align:center;">Result</th>
-        <th style="width:18%;text-align:center;">BIS Limit (IS 10500 / IS 14543)</th>
-        <th style="width:15%;text-align:center;">Best Range</th>
-        <th style="width:18%;text-align:center;">Test Method</th>
-        <th style="width:12%;text-align:center;">Status</th>
-      </tr></thead>
-      <tbody>${microRowsHtml}</tbody>
-    </table>
-
-    <!-- Legend -->
     <div class="legend">
       <strong>Legend:</strong> &nbsp;
-      <strong style="color:#059669;">PASS</strong> = Within permissible limit &nbsp;|&nbsp;
-      <strong style="color:#dc2626;">FAIL</strong> = Exceeds permissible limit &nbsp;|&nbsp;
-      <strong style="color:#d97706;">WARN</strong> = Near limit (within 10%) &nbsp;|&nbsp;
-      <strong>NT</strong> = Not Tested (parameter not included in current test scope) &nbsp;|&nbsp;
-      <strong>ND</strong> = Not Detected (based on laboratory testing) &nbsp;|&nbsp;
-      <strong>—</strong> = No data
+      <span style="color:#059669;font-weight:700;">PASS</span> = Within limit &nbsp;|&nbsp;
+      <span style="color:#dc2626;font-weight:700;">FAIL</span> = Exceeds limit &nbsp;|&nbsp;
+      <span style="color:#d97706;font-weight:700;">WARN</span> = Near limit (&lt;10% over) &nbsp;|&nbsp;
+      <strong>NT</strong> = Not Tested this batch
     </div>
 
-    <!-- Disclaimer -->
     <div class="disclaimer">
-      ⚠️ <strong>Disclaimer:</strong> This report is intended for internal quality monitoring purposes only. Results are based on actual tests conducted in-house. Parameters marked <strong>NT (Not Tested)</strong> were not included in the current test scope and should not be inferred as passing or failing. This report does not constitute a NABL/third-party accredited laboratory certificate.
+      This report is for internal quality monitoring only. Results are based on in-house tests conducted by qualified personnel. This is not a NABL-accredited third-party lab certificate.
     </div>
 
-    <!-- Remarks -->
-    <div class="remarks-box" style="margin-top:10px;">
-      <div class="rhead">📝 Remarks &amp; Testing Summary</div>
+    <div class="remarks-box">
       <div class="remarks-grid">
-        <div class="remarks-item"><label>Batch Number</label><p>${record.batchNumber || '—'}</p></div>
+        <div class="remarks-item"><label>Batch No.</label><p>${record.batchNumber || '—'}</p></div>
         <div class="remarks-item"><label>Sampling Date</label><p>${samplingDate}</p></div>
-        <div class="remarks-item"><label>Report Generation Date</label><p>${genDate}</p></div>
-        <div class="remarks-item"><label>Testing Status</label><p>${overall === 'pass' ? '✅ All tested parameters passed' : overall === 'fail' ? '❌ One or more parameters failed' : overall === 'warning' ? '⚠️ Warning — near limit' : '🔵 Partial / Pending'}</p></div>
-        <div class="remarks-item" style="grid-column:span 2;"><label>Additional Notes</label><p>${record.remarks || 'No additional remarks.'}</p></div>
+        <div class="remarks-item"><label>Testing Status</label><p>${overall === 'pass' ? '✅ All parameters passed' : overall === 'fail' ? '❌ Parameter(s) failed' : overall === 'warning' ? '⚠️ Near limit' : '🔵 Partial'}</p></div>
+        ${record.remarks ? `<div class="remarks-item" style="grid-column:span 3;"><label>Notes</label><p>${record.remarks}</p></div>` : ''}
       </div>
     </div>
 
-    <!-- Signature & Approval -->
     <div class="sig-section">
       <div class="sig-box">
-        <div class="sig-line">Sign here</div>
+        <div class="sig-line"></div>
         <label>Tested By</label>
-        <p>${record.testedBy || '___________________'}</p>
+        <p>${testedBy}</p>
       </div>
       <div class="sig-box">
-        <div class="sig-line">Sign here</div>
+        <div class="sig-line"></div>
         <label>Reviewed By</label>
         <p>___________________</p>
       </div>
-      <div style="display:flex;align-items:flex-end;gap:14px;">
+      <div style="display:flex;align-items:flex-end;gap:10px;">
         <div class="sig-box" style="flex:1;">
-          <div class="sig-line">Sign here</div>
+          <div class="sig-line"></div>
           <label>Authorized Signatory</label>
           <p>___________________</p>
         </div>
-        <div class="stamp-area">OFFICIAL<br/>STAMP</div>
+        <div class="stamp-box">OFFICIAL<br/>STAMP</div>
       </div>
     </div>
 
   </div>
 
-  <!-- Footer -->
   <div class="page-footer">
-    <div class="left">
-      AQURO Water Pvt. Ltd. &nbsp;|&nbsp; Report No.: ${reportNo} &nbsp;|&nbsp; Rev.: ${revNo} &nbsp;|&nbsp; Page 1 of 1
-    </div>
-    <div class="right">
-      This is a system-generated internal quality report. &nbsp;|&nbsp; Confidential — Not for public distribution.
-    </div>
+    <span>M/S Aquro Water, Jagua Khurd, Amroha (U.P.) | Mobile: 8449692599</span>
+    <span>Report No.: ${reportNo} &nbsp;|&nbsp; Page 1 of 1 &nbsp;|&nbsp; Confidential — Internal Use Only</span>
   </div>
 
 </body>
 </html>`;
 
-    const win = window.open('', '_blank', 'width=1050,height=800');
+    const win = window.open('', '_blank', 'width=1000,height=780');
     if (!win) { alert('Popup blocked! Please allow popups for this site.'); return; }
     win.document.write(html);
     win.document.close();
     win.focus();
     setTimeout(() => { win.print(); }, 700);
   };
+
 
 
 
