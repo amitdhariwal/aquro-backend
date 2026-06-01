@@ -47,6 +47,33 @@ export default function Production() {
     }
   };
 
+  // ── Auto-create Water Quality draft report on new Production entry ──────────
+  const createAutoWaterQualityReport = async (entry) => {
+    try {
+      const today = entry.date || new Date().toISOString().split('T')[0];
+      const sampleId = `WQ-${entry.batch}-${today}`;
+      const payload = {
+        date: today,           // only date, no time
+        sampleId,
+        batchNumber: entry.batch,
+        source: 'Final Product Sample',
+        testedBy: 'Lab Technician',
+        // All parameters left blank — to be filled in Water Quality page
+        remarks: `Auto-generated from Production Batch #${entry.batch} (${entry.size}, Qty: ${entry.qty})`
+      };
+      await fetch(
+        (import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/water-quality',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }
+      );
+    } catch (err) {
+      console.error('Auto water quality report creation failed:', err);
+    }
+  };
+
   const addHistoryLog = async (type, batch, details, payload = null) => {
     try {
       const newLog = {
@@ -219,6 +246,9 @@ export default function Production() {
         
         // Deduct new inventory
         await adjustInventoryForProduction(entryData, false);
+
+        // ✅ Auto-create Water Quality draft report (date only, no time)
+        await createAutoWaterQualityReport(entryData);
       }
 
       await fetchProductions();

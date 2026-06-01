@@ -20,29 +20,55 @@ import {
 } from 'lucide-react';
 
 
-// ─── Water Quality Parameters (NABL Standard) ────────────────────────────────
+// ─── Water Quality Parameters (Excel: Aquro_Water_Parameters_Complete.xlsx) ──
 const PARAMETERS = [
-  { key: 'ph', label: 'pH Value', unit: '', min: 6.5, max: 8.5, icon: '⚗️' },
-  { key: 'tds', label: 'TDS', unit: 'mg/L', min: 0, max: 500, icon: '💧' },
-  { key: 'turbidity', label: 'Turbidity', unit: 'NTU', min: 0, max: 1, icon: '🌫️' },
-  { key: 'hardness', label: 'Total Hardness', unit: 'mg/L', min: 0, max: 200, icon: '🪨' },
-  { key: 'chloride', label: 'Chloride', unit: 'mg/L', min: 0, max: 250, icon: '🧪' },
-  { key: 'nitrate', label: 'Nitrate', unit: 'mg/L', min: 0, max: 45, icon: '🌿' },
-  { key: 'iron', label: 'Iron', unit: 'mg/L', min: 0, max: 0.3, icon: '🔩' },
-  { key: 'fluoride', label: 'Fluoride', unit: 'mg/L', min: 0, max: 1.0, icon: '⚡' },
-  { key: 'alkalinity', label: 'Alkalinity', unit: 'mg/L', min: 0, max: 200, icon: '🧬' },
-  { key: 'coliform', label: 'Coliform (MPN/100ml)', unit: 'MPN/100ml', min: 0, max: 0, icon: '🦠' },
+  // Physical / Chemical
+  { key: 'ph',          label: 'pH Value',           unit: '',      min: 6.5,   max: 8.5,   icon: '⚗️',  bisLimit: '6.5 – 8.5',       bestRange: '7.0 – 7.5' },
+  { key: 'tds',         label: 'TDS',                unit: 'mg/L',  min: 0,     max: 500,   icon: '💧',  bisLimit: 'Max 500',          bestRange: '80 – 150' },
+  { key: 'turbidity',   label: 'Turbidity',          unit: 'NTU',   min: 0,     max: 1,     icon: '🌫️', bisLimit: 'Max 1',            bestRange: '< 0.5' },
+  { key: 'hardness',    label: 'Total Hardness',     unit: 'mg/L',  min: 0,     max: 200,   icon: '🪨',  bisLimit: 'Max 200',          bestRange: '50 – 100' },
+  { key: 'calcium',     label: 'Calcium',            unit: 'mg/L',  min: 0,     max: 75,    icon: '🦴',  bisLimit: 'Max 75',           bestRange: '20 – 40' },
+  { key: 'magnesium',   label: 'Magnesium',          unit: 'mg/L',  min: 0,     max: 30,    icon: '⚙️', bisLimit: 'Max 30',           bestRange: '5 – 15' },
+  { key: 'alkalinity',  label: 'Alkalinity',         unit: 'mg/L',  min: 0,     max: 200,   icon: '🧬',  bisLimit: 'Max 200',          bestRange: '40 – 80' },
+  { key: 'chloride',    label: 'Chloride',           unit: 'mg/L',  min: 0,     max: 250,   icon: '🧪',  bisLimit: 'Max 250',          bestRange: '< 50' },
+  { key: 'sulphate',    label: 'Sulphate',           unit: 'mg/L',  min: 0,     max: 200,   icon: '🌡️', bisLimit: 'Max 200',          bestRange: '< 50' },
+  { key: 'nitrate',     label: 'Nitrate',            unit: 'mg/L',  min: 0,     max: 45,    icon: '🌿',  bisLimit: 'Max 45',           bestRange: '< 10' },
+  { key: 'fluoride',    label: 'Fluoride',           unit: 'mg/L',  min: 0,     max: 1.0,   icon: '⚡',  bisLimit: 'Max 1.0',          bestRange: '0.5 – 0.8' },
+  { key: 'sodium',      label: 'Sodium',             unit: 'mg/L',  min: 0,     max: 200,   icon: '🧂',  bisLimit: 'As per source',    bestRange: 'Low' },
+  { key: 'potassium',   label: 'Potassium',          unit: 'mg/L',  min: 0,     max: 100,   icon: '🍌',  bisLimit: 'As per source',    bestRange: 'Low' },
+  { key: 'iron',        label: 'Iron',               unit: 'mg/L',  min: 0,     max: 0.1,   icon: '🔩',  bisLimit: 'Max 0.1',          bestRange: '< 0.03' },
+  { key: 'manganese',   label: 'Manganese',          unit: 'mg/L',  min: 0,     max: 0.05,  icon: '🔘',  bisLimit: 'Max 0.05',         bestRange: '< 0.01' },
+  { key: 'copper',      label: 'Copper',             unit: 'mg/L',  min: 0,     max: 0.05,  icon: '🟤',  bisLimit: 'Max 0.05',         bestRange: '< 0.01' },
+  { key: 'zinc',        label: 'Zinc',               unit: 'mg/L',  min: 0,     max: 5,     icon: '🔵',  bisLimit: 'Max 5',            bestRange: '< 1' },
+  { key: 'lead',        label: 'Lead',               unit: 'mg/L',  min: 0,     max: 0.01,  icon: '⬛',  bisLimit: 'Max 0.01',         bestRange: 'ND' },
+  { key: 'arsenic',     label: 'Arsenic',            unit: 'mg/L',  min: 0,     max: 0.01,  icon: '☠️', bisLimit: 'Max 0.01',         bestRange: 'ND' },
+  { key: 'cadmium',     label: 'Cadmium',            unit: 'mg/L',  min: 0,     max: 0.003, icon: '🟡',  bisLimit: 'Max 0.003',        bestRange: 'ND' },
+  { key: 'chromium',    label: 'Chromium',           unit: 'mg/L',  min: 0,     max: 0.05,  icon: '🟠',  bisLimit: 'Max 0.05',         bestRange: 'ND' },
+  { key: 'mercury',     label: 'Mercury',            unit: 'mg/L',  min: 0,     max: 0.001, icon: '💊',  bisLimit: 'Max 0.001',        bestRange: 'ND' },
+  { key: 'residualOzone', label: 'Residual Ozone',  unit: 'mg/L',  min: 0.1,   max: 0.4,   icon: '🌀',  bisLimit: '0.1 – 0.4',        bestRange: '0.2 – 0.3' },
+  // Microbiological
+  { key: 'coliform',    label: 'Total Coliform',     unit: '/250mL', min: 0,    max: 0,     icon: '🦠',  bisLimit: 'Absent/250 mL',    bestRange: 'Absent', isMicro: true },
+  { key: 'ecoli',       label: 'E. coli',            unit: '/250mL', min: 0,    max: 0,     icon: '🔬',  bisLimit: 'Absent/250 mL',    bestRange: 'Absent', isMicro: true },
+  { key: 'pseudomonas', label: 'Pseudomonas',        unit: '/250mL', min: 0,    max: 0,     icon: '🧫',  bisLimit: 'Absent/250 mL',    bestRange: 'Absent', isMicro: true },
+  { key: 'salmonella',  label: 'Salmonella',         unit: '/250mL', min: 0,    max: 0,     icon: '🦟',  bisLimit: 'Absent',           bestRange: 'Absent', isMicro: true },
+  { key: 'tpc',         label: 'TPC',                unit: 'CFU/mL', min: 0,    max: 10,    icon: '🧪',  bisLimit: 'Very Low',         bestRange: '< 10 CFU/mL' },
 ];
 
 function getParamStatus(key, value) {
   const p = PARAMETERS.find((x) => x.key === key);
   if (!p || value === '' || value === null || value === undefined) return 'unknown';
+  // Microbiological: Absent = pass, anything else = fail
+  if (p.isMicro) {
+    const strVal = String(value).trim().toLowerCase();
+    if (strVal === 'absent' || strVal === 'nd' || strVal === '0') return 'pass';
+    return 'fail';
+  }
   const v = parseFloat(value);
-  if (isNaN(v)) return 'unknown';
-  if (key === 'coliform') return v === 0 ? 'pass' : 'fail';
+  if (isNaN(v)) return p.bestRange === 'ND' ? 'pass' : 'unknown';
   if (v >= p.min && v <= p.max) return 'pass';
-  if (v < p.min * 0.9 || v > p.max * 1.1) return 'fail';
-  return 'warning';
+  // Warning zone: within 10% beyond limit
+  if (p.max > 0 && v > p.max && v <= p.max * 1.1) return 'warning';
+  return 'fail';
 }
 
 function getOverallStatus(record) {
@@ -65,6 +91,7 @@ const STATUS_CONFIG = {
 const emptyForm = () => ({
   date: new Date().toISOString().split('T')[0],
   sampleId: '',
+  batchNumber: '',
   source: 'RO Plant Output',
   testedBy: '',
   ...Object.fromEntries(PARAMETERS.map((p) => [p.key, ''])),
@@ -124,7 +151,10 @@ export default function WaterQuality() {
   const handleDelete = async (id) => {
     if (window.confirm('Kya aap is record ko delete karna chahte hain?')) {
       try {
-        const res = await fetch(`/api/water-quality/${id}`, { method: 'DELETE' });
+        const res = await fetch(
+          (import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/water-quality/${id}`,
+          { method: 'DELETE' }
+        );
         if (res.ok) {
           fetchRecords();
         }
@@ -138,21 +168,17 @@ export default function WaterQuality() {
     const overall = getOverallStatus(record);
     const overallCfg = STATUS_CONFIG[overall] || STATUS_CONFIG['pending'];
     const statusColors = { pass: '#10b981', fail: '#ef4444', warning: '#f59e0b', pending: '#94a3b8', unknown: '#94a3b8' };
-
-    const rowsHtml = PARAMETERS.map(p => {
+    const chemParams = PARAMETERS.filter(p => !p.isMicro);
+    const microParams = PARAMETERS.filter(p => p.isMicro);
+    const buildRows = (params) => params.map(p => {
       const val = record[p.key];
       const status = getParamStatus(p.key, val);
       const color = statusColors[status] || '#94a3b8';
       const displayVal = (val !== '' && val !== null && val !== undefined) ? `${val}${p.unit ? ' ' + p.unit : ''}` : '—';
-      const limit = p.key === 'coliform' ? `0 ${p.unit}` : `${p.min} – ${p.max}${p.unit ? ' ' + p.unit : ''}`;
-      return `
-        <tr>
-          <td>${p.label}</td>
-          <td style="text-align:center;">${displayVal}</td>
-          <td style="text-align:center;">${limit}</td>
-          <td style="text-align:center;color:${color};font-weight:700;">${status.toUpperCase()}</td>
-        </tr>`;
+      return `<tr><td>${p.label}</td><td style="text-align:center;">${displayVal}</td><td style="text-align:center;">${p.bisLimit || '—'}</td><td style="text-align:center;">${p.bestRange || '—'}</td><td style="text-align:center;color:${color};font-weight:700;">${status.toUpperCase()}</td></tr>`;
     }).join('');
+    const chemRowsHtml = buildRows(chemParams);
+    const microRowsHtml = buildRows(microParams);
 
     const html = `<!DOCTYPE html>
 <html>
@@ -170,7 +196,8 @@ export default function WaterQuality() {
     .info-item label { font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; }
     .info-item p { font-size:13px; font-weight:600; color:#1e293b; margin-top:2px; }
     .badge { display:inline-block; padding:3px 12px; border-radius:999px; font-size:12px; font-weight:700; color:#fff; }
-    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:12px; }
+    .section-title { font-size:11px; font-weight:700; color:#0ea5e9; text-transform:uppercase; letter-spacing:.5px; margin:14px 0 6px; }
+    table { width:100%; border-collapse:collapse; margin-top:4px; font-size:12px; }
     thead tr { background:#0ea5e9; color:#fff; }
     thead th { padding:9px 12px; text-align:left; font-weight:700; }
     tbody tr:nth-child(even) { background:#f8fafc; }
@@ -184,12 +211,13 @@ export default function WaterQuality() {
 <body>
   <div class="header">
     <h1>💧 AQURO Water Quality Report</h1>
-    <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
+    <p>Generated on: ${new Date().toLocaleDateString('en-IN')}</p>
   </div>
   <div class="divider"></div>
   <div class="info-grid">
     <div class="info-item"><label>Sample ID</label><p>${record.sampleId}</p></div>
     <div class="info-item"><label>Test Date</label><p>${record.date}</p></div>
+    ${record.batchNumber ? `<div class="info-item"><label>Batch Number</label><p>${record.batchNumber}</p></div>` : ''}
     <div class="info-item"><label>Sample Source</label><p>${record.source}</p></div>
     <div class="info-item"><label>Tested By</label><p>${record.testedBy}</p></div>
     <div class="info-item"><label>Overall Status</label>
@@ -197,9 +225,15 @@ export default function WaterQuality() {
     </div>
   </div>
   <div class="divider"></div>
+  <div class="section-title">Physical &amp; Chemical Parameters</div>
   <table>
-    <thead><tr><th>Parameter</th><th>Result</th><th>Acceptable Limit</th><th>Status</th></tr></thead>
-    <tbody>${rowsHtml}</tbody>
+    <thead><tr><th>Parameter</th><th>Result</th><th>BIS Limit</th><th>Best Range</th><th>Status</th></tr></thead>
+    <tbody>${chemRowsHtml}</tbody>
+  </table>
+  <div class="section-title" style="margin-top:18px;">Microbiological Parameters</div>
+  <table>
+    <thead><tr><th>Parameter</th><th>Result</th><th>BIS Limit</th><th>Best Range</th><th>Status</th></tr></thead>
+    <tbody>${microRowsHtml}</tbody>
   </table>
   ${record.remarks ? `<div class="remarks"><strong>Remarks / Notes:</strong>${record.remarks}</div>` : ''}
   <div class="footer">AQURO — Water Quality Management System &nbsp;|&nbsp; Confidential Report</div>
@@ -214,9 +248,11 @@ export default function WaterQuality() {
     setTimeout(() => { win.print(); }, 600);
   };
 
+
   const filtered = filterStatus === 'all'
     ? records
     : records.filter((r) => getOverallStatus(r) === filterStatus);
+
 
   // Summary stats
   const totalTests = records.length;
@@ -471,15 +507,26 @@ export default function WaterQuality() {
                     className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-aquro-400 focus:border-transparent"
                   />
                 </div>
+                </div>
               </div>
+
+              {/* Batch Number (auto-filled from Production, readonly if pre-filled) */}
+              {form.batchNumber && (
+                <div className="bg-aquro-50 border border-aquro-200 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <span className="text-xs font-bold text-aquro-600 uppercase tracking-wider">Batch #</span>
+                  <span className="text-sm font-bold text-slate-800">{form.batchNumber}</span>
+                  <span className="text-xs text-slate-400 ml-auto">Auto-linked from Production</span>
+                </div>
+              )}
 
               {/* Parameters */}
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-                  Quality Parameters (NABL Standard)
+                  Physical &amp; Chemical Parameters
                 </p>
+
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {PARAMETERS.map((param) => (
+                  {PARAMETERS.filter(p => !p.isMicro).map((param) => (
                     <div key={param.key} className="bg-slate-50 border border-slate-200 rounded-xl p-3">
                       <label className="block text-xs font-semibold text-slate-600 mb-1">
                         {param.icon} {param.label}
@@ -500,6 +547,36 @@ export default function WaterQuality() {
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Microbiological Parameters */}
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                  Microbiological Parameters
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {PARAMETERS.filter(p => p.isMicro).map((param) => (
+                    <div key={param.key} className="bg-red-50 border border-red-100 rounded-xl p-3">
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">
+                        {param.icon} {param.label}
+                      </label>
+                      <input
+                        type="text"
+                        name={param.key}
+                        value={form[param.key]}
+                        onChange={handleChange}
+                        placeholder="Absent / ND / Present"
+                        className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-transparent"
+                      />
+                      {form[param.key] !== '' && (
+                        <span className={`text-xs font-semibold mt-1 block ${STATUS_CONFIG[getParamStatus(param.key, form[param.key])].color}`}>
+                          {STATUS_CONFIG[getParamStatus(param.key, form[param.key])].label}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
                 </div>
               </div>
 
