@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Filter, Download, Edit2, Trash2, History, X, Package, Calendar } from 'lucide-react';
+import { Plus, Filter, Download, Edit2, Trash2, History, X, Package, Calendar, RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -71,6 +71,36 @@ export default function Production() {
       );
     } catch (err) {
       console.error('Auto water quality report creation failed:', err);
+    }
+  };
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const handleSyncMissingReports = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const resWq = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/water-quality');
+      const wqData = await resWq.json();
+      const existingBatches = new Set(wqData.map(wq => wq.batchNumber).filter(Boolean));
+      
+      let createdCount = 0;
+      for (const prod of productions) {
+        if (!existingBatches.has(prod.batch)) {
+          await createAutoWaterQualityReport(prod);
+          createdCount++;
+        }
+      }
+      
+      if (createdCount > 0) {
+        alert(`${createdCount} missing Water Quality reports have been generated! Please check the Water Quality page.`);
+      } else {
+        alert('All production entries already have water quality reports.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to sync reports.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -412,6 +442,14 @@ export default function Production() {
           <p className="text-slate-500 text-sm mt-1">Manage daily water production and filling records.</p>
         </div>
         <div className="flex items-center gap-3">
+          <button 
+            onClick={handleSyncMissingReports}
+            disabled={isSyncing}
+            className="px-4 py-2 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg shadow-sm hover:bg-indigo-100 transition-colors text-sm font-medium flex items-center disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing...' : 'Sync Missing Reports'}
+          </button>
           <button 
             onClick={() => setIsHistoryOpen(true)}
             className="px-4 py-2 bg-white text-slate-600 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm font-medium flex items-center"
