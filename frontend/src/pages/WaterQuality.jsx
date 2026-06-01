@@ -241,8 +241,8 @@ export default function WaterQuality() {
     .page-header { background:linear-gradient(135deg,#0369a1,#0ea5e9); color:#fff; padding:11px 18px; display:flex; align-items:center; justify-content:space-between; }
     .company-info h1 { font-size:18px; font-weight:800; letter-spacing:1px; }
     .company-info p { font-size:9px; opacity:.88; margin-top:1px; line-height:1.5; }
-    .report-meta { text-align:right; font-size:8.5px; opacity:.92; line-height:1.7; }
-    .report-meta strong { font-size:10.5px; display:block; }
+    .report-meta { text-align:right; font-size:9px; color:#fff; line-height:1.8; font-weight:600; }
+    .report-meta strong { font-size:11px; display:block; letter-spacing:.5px; }
     .title-bar { background:#f0f9ff; border-bottom:2px solid #0ea5e9; padding:5px 18px; display:flex; align-items:center; justify-content:space-between; }
     .title-bar h2 { font-size:11.5px; font-weight:700; color:#0369a1; }
     .ref-std { font-size:8.5px; color:#64748b; }
@@ -295,7 +295,7 @@ export default function WaterQuality() {
       <strong>WATER QUALITY TEST REPORT</strong>
       Report No.: ${reportNo}<br/>
       Ref: IS 14543 &amp; IS 10500<br/>
-      Page: 1 of 1 &nbsp;|&nbsp; Generated: ${genDate}
+      Page: 1 of 1 &nbsp;|&nbsp; Date: ${samplingDate}
     </div>
   </div>
 
