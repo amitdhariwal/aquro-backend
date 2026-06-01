@@ -193,102 +193,323 @@ export default function WaterQuality() {
   const handleDownloadPDF = (record) => {
     const overall = getOverallStatus(record);
     const overallCfg = STATUS_CONFIG[overall] || STATUS_CONFIG['pending'];
-    const statusColors = { pass: '#10b981', fail: '#ef4444', warning: '#f59e0b', pending: '#94a3b8', unknown: '#94a3b8' };
+    const statusColors = { pass: '#059669', fail: '#dc2626', warning: '#d97706', pending: '#64748b', unknown: '#94a3b8' };
+
+    const reportNo = `AQURO/WQ/${record.batchNumber || record.sampleId}/${new Date().getFullYear()}`;
+    const revNo = 'R00';
+    const genDate = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+    const samplingDate = record.date;
+
+    const HEAVY_METALS = ['lead','arsenic','cadmium','chromium','mercury'];
+
+    // Lookup bisLimit override for Sodium/Potassium
+    const bisLimitOverride = { sodium: 'No BIS Limit Specified', potassium: 'No BIS Limit Specified' };
+
+    const TEST_METHODS = {
+      ph: 'IS 3025 (Part 11)',
+      tds: 'IS 3025 (Part 16)',
+      turbidity: 'IS 3025 (Part 10)',
+      hardness: 'IS 3025 (Part 21)',
+      calcium: 'IS 3025 (Part 40)',
+      magnesium: 'IS 3025 (Part 46)',
+      alkalinity: 'IS 3025 (Part 23)',
+      chloride: 'IS 3025 (Part 32)',
+      sulphate: 'IS 3025 (Part 24)',
+      nitrate: 'IS 3025 (Part 34)',
+      fluoride: 'IS 3025 (Part 60)',
+      sodium: 'IS 3025 (Part 45)',
+      potassium: 'IS 3025 (Part 45)',
+      iron: 'IS 3025 (Part 53)',
+      manganese: 'IS 3025 (Part 59)',
+      copper: 'IS 3025 (Part 42)',
+      zinc: 'IS 3025 (Part 49)',
+      lead: 'IS 3025 (Part 55)',
+      arsenic: 'IS 3025 (Part 37)',
+      cadmium: 'IS 3025 (Part 41)',
+      chromium: 'IS 3025 (Part 52)',
+      mercury: 'IS 3025 (Part 48)',
+      residualOzone: 'IS 3025',
+      coliform: 'IS 1622',
+      ecoli: 'IS 1622',
+      pseudomonas: 'IS 13428',
+      salmonella: 'IS 5887',
+      tpc: 'IS 5401',
+    };
+
+    const buildRows = (params) => params.map(p => {
+      const rawVal = record[p.key];
+      const strVal = rawVal !== undefined && rawVal !== null && rawVal !== '' ? String(rawVal).trim() : '';
+      
+      // NT handling: heavy metals default to NT if value is 'ND' and no explicit test data
+      const isHeavyMetal = HEAVY_METALS.includes(p.key);
+      let displayVal, status, statusLabel, statusColor;
+
+      if (strVal === '' || strVal.toLowerCase() === 'nt' || strVal.toLowerCase() === 'n/a' || (isHeavyMetal && strVal.toLowerCase() === 'nd')) {
+        displayVal = 'NT (Not Tested)';
+        status = 'unknown';
+        statusLabel = 'NT';
+        statusColor = '#94a3b8';
+      } else {
+        displayVal = `${strVal}${p.unit ? ' ' + p.unit : ''}`;
+        status = getParamStatus(p.key, rawVal);
+        statusLabel = status === 'pass' ? 'PASS' : status === 'fail' ? 'FAIL' : status === 'warning' ? 'WARN' : '—';
+        statusColor = statusColors[status] || '#94a3b8';
+      }
+
+      const bisLimitDisplay = bisLimitOverride[p.key] || p.bisLimit || '—';
+      const method = TEST_METHODS[p.key] || 'IS 3025';
+
+      return `<tr>
+        <td>${p.label}</td>
+        <td style="text-align:center;font-weight:600;">${displayVal}</td>
+        <td style="text-align:center;">${bisLimitDisplay}</td>
+        <td style="text-align:center;">${p.bestRange || '—'}</td>
+        <td style="text-align:center;font-size:9px;color:#475569;">${method}</td>
+        <td style="text-align:center;">
+          <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-weight:700;font-size:10px;color:#fff;background:${statusColor};">${statusLabel}</span>
+        </td>
+      </tr>`;
+    }).join('');
+
     const chemParams = PARAMETERS.filter(p => !p.isMicro);
     const microParams = PARAMETERS.filter(p => p.isMicro);
-    const buildRows = (params) => params.map(p => {
-      const val = record[p.key];
-      const status = getParamStatus(p.key, val);
-      const color = statusColors[status] || '#94a3b8';
-      const displayVal = (val !== '' && val !== null && val !== undefined) ? `${val}${p.unit ? ' ' + p.unit : ''}` : '—';
-      return `<tr><td>${p.label}</td><td style="text-align:center;">${displayVal}</td><td style="text-align:center;">${p.bisLimit || '—'}</td><td style="text-align:center;">${p.bestRange || '—'}</td><td style="text-align:center;color:${color};font-weight:700;">${status.toUpperCase()}</td></tr>`;
-    }).join('');
     const chemRowsHtml = buildRows(chemParams);
     const microRowsHtml = buildRows(microParams);
+
+    const testedCount = PARAMETERS.filter(p => {
+      const v = String(record[p.key] || '').trim().toLowerCase();
+      return v !== '' && v !== 'nt' && v !== 'n/a' && !(HEAVY_METALS.includes(p.key) && v === 'nd');
+    }).length;
 
     const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8"/>
-  <title>Water Quality Report - ${record.sampleId}</title>
+  <title>Water Quality Report — ${record.sampleId}</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; color:#1e293b; background:#fff; padding:32px; }
-    .header { text-align:center; margin-bottom:20px; }
-    .header h1 { font-size:24px; color:#0ea5e9; font-weight:800; letter-spacing:1px; }
-    .header p { font-size:11px; color:#64748b; margin-top:4px; }
-    .divider { height:2px; background:linear-gradient(to right,#0ea5e9,#38bdf8); border-radius:2px; margin:12px 0; }
-    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 32px; margin-bottom:16px; }
-    .info-item label { font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; }
-    .info-item p { font-size:12px; font-weight:600; color:#1e293b; margin-top:2px; }
-    .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:700; color:#fff; }
-    .section-title { font-size:11px; font-weight:700; color:#0ea5e9; text-transform:uppercase; letter-spacing:.5px; margin:12px 0 4px; }
-    table { width:100%; border-collapse:collapse; margin-top:4px; font-size:11px; }
-    thead tr { background:#0ea5e9; color:#fff; }
-    thead th { padding:6px 10px; text-align:left; font-weight:700; }
-    tbody tr:nth-child(even) { background:#f8fafc; }
-    tbody td { padding:5px 10px; border-bottom:1px solid #e2e8f0; }
-    .remarks { margin-top:16px; padding:10px 14px; background:#f1f5f9; border-left:4px solid #0ea5e9; border-radius:6px; font-size:11px; color:#475569; }
-    .remarks strong { color:#1e293b; display:block; margin-bottom:4px; }
-    .footer { margin-top:24px; text-align:center; font-size:10px; color:#94a3b8; border-top:1px solid #e2e8f0; padding-top:10px; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color:#1e293b; background:#fff; font-size:11px; }
     
-    @page { size: A4; margin: 10mm; }
-    @media print { 
-      body { padding: 0 !important; }
-      .header { margin-bottom: 10px; }
-      .header h1 { font-size: 18px; }
-      .divider { margin: 8px 0; height: 2px; }
-      .info-grid { margin-bottom: 8px; gap: 4px 16px; }
-      .info-item label { font-size: 9px; }
-      .info-item p { font-size: 11px; }
-      table { font-size: 10px; }
-      thead th { padding: 4px 8px; }
-      tbody td { padding: 3.5px 8px; }
-      .section-title { font-size: 10px; margin: 8px 0 4px; }
-      .remarks { margin-top: 10px; padding: 6px 10px; font-size: 10px; }
-      .footer { margin-top: 12px; padding-top: 6px; font-size: 9px; }
+    /* Header */
+    .page-header { background:linear-gradient(135deg,#0369a1,#0ea5e9); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
+    .company-info h1 { font-size:20px; font-weight:800; letter-spacing:1px; }
+    .company-info p { font-size:9.5px; opacity:.85; margin-top:2px; }
+    .report-meta { text-align:right; font-size:9px; opacity:.9; line-height:1.7; }
+    .report-meta strong { font-size:11px; display:block; }
+
+    /* Title bar */
+    .title-bar { background:#f0f9ff; border-bottom:2px solid #0ea5e9; padding:7px 20px; display:flex; align-items:center; justify-content:space-between; }
+    .title-bar h2 { font-size:13px; font-weight:700; color:#0369a1; }
+    .ref-standards { font-size:9px; color:#64748b; text-align:right; line-height:1.6; }
+
+    /* Body */
+    .body-wrap { padding:12px 20px; }
+    .divider { height:1.5px; background:linear-gradient(to right,#0ea5e9,#e2e8f0); margin:10px 0; }
+
+    /* Info grid */
+    .info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px 16px; margin-bottom:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 14px; }
+    .info-item label { font-size:8.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; }
+    .info-item p { font-size:11px; font-weight:600; color:#0f172a; margin-top:1px; }
+    .badge { display:inline-block; padding:2px 10px; border-radius:4px; font-size:10px; font-weight:700; color:#fff; }
+
+    /* Tables */
+    .section-title { font-size:10px; font-weight:700; color:#0369a1; text-transform:uppercase; letter-spacing:.6px; margin:10px 0 4px; padding-bottom:3px; border-bottom:1.5px solid #bae6fd; }
+    table { width:100%; border-collapse:collapse; font-size:10px; }
+    thead tr { background:#0369a1; color:#fff; }
+    thead th { padding:5px 8px; text-align:left; font-weight:700; font-size:9.5px; }
+    tbody tr:nth-child(even) { background:#f0f9ff; }
+    tbody td { padding:4px 8px; border-bottom:1px solid #e2e8f0; vertical-align:middle; }
+    tbody tr:hover { background:#e0f2fe; }
+
+    /* Remarks */
+    .remarks-box { background:#f8fafc; border:1px solid #e2e8f0; border-left:4px solid #0ea5e9; border-radius:6px; padding:9px 13px; margin-top:10px; }
+    .remarks-box .rhead { font-size:9.5px; font-weight:700; color:#0369a1; text-transform:uppercase; margin-bottom:5px; }
+    .remarks-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; }
+    .remarks-item label { font-size:8.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; }
+    .remarks-item p { font-size:10px; color:#1e293b; }
+
+    /* Legend */
+    .legend { margin-top:10px; background:#fffbeb; border:1px solid #fde68a; border-radius:5px; padding:7px 12px; font-size:9px; color:#78350f; }
+    .legend strong { color:#92400e; }
+
+    /* Disclaimer */
+    .disclaimer { margin-top:8px; background:#fef2f2; border:1px solid #fecaca; border-radius:5px; padding:7px 12px; font-size:9px; color:#7f1d1d; font-style:italic; }
+
+    /* Signature section */
+    .sig-section { margin-top:12px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+    .sig-box { border-top:1.5px solid #64748b; padding-top:6px; }
+    .sig-box .sig-line { height:30px; border:1px dashed #cbd5e1; border-radius:4px; margin-bottom:5px; background:#f8fafc; display:flex; align-items:center; justify-content:center; color:#cbd5e1; font-size:9px; }
+    .sig-box label { font-size:8.5px; font-weight:700; color:#64748b; text-transform:uppercase; display:block; }
+    .sig-box p { font-size:10px; color:#1e293b; font-weight:600; }
+
+    /* Stamp area */
+    .stamp-area { border:2px dashed #0ea5e9; border-radius:8px; width:90px; height:70px; display:flex; align-items:center; justify-content:center; color:#0ea5e9; font-size:8px; font-weight:700; text-align:center; }
+
+    /* Footer */
+    .page-footer { margin-top:14px; background:#f1f5f9; border-top:1.5px solid #e2e8f0; padding:8px 20px; display:flex; justify-content:space-between; align-items:center; }
+    .page-footer .left { font-size:8.5px; color:#64748b; }
+    .page-footer .right { font-size:8.5px; color:#94a3b8; }
+
+    @page { size: A4; margin: 8mm; }
+    @media print {
+      body { font-size:10px; }
+      .page-header { padding:10px 16px; }
+      .company-info h1 { font-size:17px; }
+      .body-wrap { padding:8px 16px; }
+      .info-grid { padding:7px 10px; }
+      table { font-size:9px; }
+      thead th { padding:4px 6px; }
+      tbody td { padding:3px 6px; }
+      .sig-section { margin-top:10px; }
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>💧 AQURO Water Quality Report</h1>
-    <p>Generated on: ${new Date().toLocaleDateString('en-IN')}</p>
-  </div>
-  <div class="divider"></div>
-  <div class="info-grid">
-    <div class="info-item"><label>Sample ID</label><p>${record.sampleId}</p></div>
-    <div class="info-item"><label>Test Date</label><p>${record.date}</p></div>
-    ${record.batchNumber ? `<div class="info-item"><label>Batch Number</label><p>${record.batchNumber}</p></div>` : ''}
-    <div class="info-item"><label>Sample Source</label><p>${record.source}</p></div>
-    <div class="info-item"><label>Tested By</label><p>${record.testedBy}</p></div>
-    <div class="info-item"><label>Overall Status</label>
-      <p><span class="badge" style="background:${statusColors[overall]};">${overallCfg.label}</span></p>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="company-info">
+      <h1>💧 AQURO</h1>
+      <p>Premium Packaged Drinking Water</p>
+      <p style="margin-top:3px;">AQURO Water Pvt. Ltd. | aqurowater.com | contact@aqurowater.com</p>
+    </div>
+    <div class="report-meta">
+      <strong>WATER QUALITY TEST REPORT</strong>
+      Report No.: ${reportNo}<br/>
+      Revision: ${revNo}<br/>
+      Page: 1 of 1<br/>
+      Generated: ${genDate}
     </div>
   </div>
-  <div class="divider"></div>
-  <div class="section-title">Physical &amp; Chemical Parameters</div>
-  <table>
-    <thead><tr><th>Parameter</th><th>Result</th><th>BIS Limit</th><th>Best Range</th><th>Status</th></tr></thead>
-    <tbody>${chemRowsHtml}</tbody>
-  </table>
-  <div class="section-title" style="margin-top:18px;">Microbiological Parameters</div>
-  <table>
-    <thead><tr><th>Parameter</th><th>Result</th><th>BIS Limit</th><th>Best Range</th><th>Status</th></tr></thead>
-    <tbody>${microRowsHtml}</tbody>
-  </table>
-  ${record.remarks ? `<div class="remarks"><strong>Remarks / Notes:</strong>${record.remarks}</div>` : ''}
-  <div class="footer">AQURO — Water Quality Management System &nbsp;|&nbsp; Confidential Report</div>
+
+  <!-- Title bar -->
+  <div class="title-bar">
+    <h2>📋 Water Quality Analysis Report — ${record.sampleId}</h2>
+    <div class="ref-standards">
+      <strong>Reference Standards:</strong>
+      IS 14543 (Packaged Drinking Water) &nbsp;|&nbsp; IS 10500 (Drinking Water Specification)
+    </div>
+  </div>
+
+  <div class="body-wrap">
+
+    <!-- Info Grid -->
+    <div class="info-grid">
+      <div class="info-item"><label>Sample ID</label><p>${record.sampleId}</p></div>
+      <div class="info-item"><label>Sampling Date</label><p>${samplingDate}</p></div>
+      <div class="info-item"><label>Report Date</label><p>${genDate}</p></div>
+      ${record.batchNumber ? `<div class="info-item"><label>Batch Number</label><p>${record.batchNumber}</p></div>` : ''}
+      <div class="info-item"><label>Sample Source</label><p>${record.source || '—'}</p></div>
+      <div class="info-item"><label>Tested By</label><p>${record.testedBy || '—'}</p></div>
+      <div class="info-item"><label>Parameters Tested</label><p>${testedCount} / ${PARAMETERS.length}</p></div>
+      <div class="info-item"><label>Overall Result</label>
+        <p><span class="badge" style="background:${statusColors[overall]};">${overallCfg.label}</span></p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Physical & Chemical Parameters -->
+    <div class="section-title">Physical &amp; Chemical Parameters</div>
+    <table>
+      <thead><tr>
+        <th style="width:22%">Parameter</th>
+        <th style="width:15%;text-align:center;">Result</th>
+        <th style="width:18%;text-align:center;">BIS Limit (IS 10500 / IS 14543)</th>
+        <th style="width:15%;text-align:center;">Best Range</th>
+        <th style="width:18%;text-align:center;">Test Method</th>
+        <th style="width:12%;text-align:center;">Status</th>
+      </tr></thead>
+      <tbody>${chemRowsHtml}</tbody>
+    </table>
+
+    <!-- Microbiological Parameters -->
+    <div class="section-title" style="margin-top:12px;">Microbiological Parameters</div>
+    <table>
+      <thead><tr>
+        <th style="width:22%">Parameter</th>
+        <th style="width:15%;text-align:center;">Result</th>
+        <th style="width:18%;text-align:center;">BIS Limit (IS 10500 / IS 14543)</th>
+        <th style="width:15%;text-align:center;">Best Range</th>
+        <th style="width:18%;text-align:center;">Test Method</th>
+        <th style="width:12%;text-align:center;">Status</th>
+      </tr></thead>
+      <tbody>${microRowsHtml}</tbody>
+    </table>
+
+    <!-- Legend -->
+    <div class="legend">
+      <strong>Legend:</strong> &nbsp;
+      <strong style="color:#059669;">PASS</strong> = Within permissible limit &nbsp;|&nbsp;
+      <strong style="color:#dc2626;">FAIL</strong> = Exceeds permissible limit &nbsp;|&nbsp;
+      <strong style="color:#d97706;">WARN</strong> = Near limit (within 10%) &nbsp;|&nbsp;
+      <strong>NT</strong> = Not Tested (parameter not included in current test scope) &nbsp;|&nbsp;
+      <strong>ND</strong> = Not Detected (based on laboratory testing) &nbsp;|&nbsp;
+      <strong>—</strong> = No data
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+      ⚠️ <strong>Disclaimer:</strong> This report is intended for internal quality monitoring purposes only. Results are based on actual tests conducted in-house. Parameters marked <strong>NT (Not Tested)</strong> were not included in the current test scope and should not be inferred as passing or failing. This report does not constitute a NABL/third-party accredited laboratory certificate.
+    </div>
+
+    <!-- Remarks -->
+    <div class="remarks-box" style="margin-top:10px;">
+      <div class="rhead">📝 Remarks &amp; Testing Summary</div>
+      <div class="remarks-grid">
+        <div class="remarks-item"><label>Batch Number</label><p>${record.batchNumber || '—'}</p></div>
+        <div class="remarks-item"><label>Sampling Date</label><p>${samplingDate}</p></div>
+        <div class="remarks-item"><label>Report Generation Date</label><p>${genDate}</p></div>
+        <div class="remarks-item"><label>Testing Status</label><p>${overall === 'pass' ? '✅ All tested parameters passed' : overall === 'fail' ? '❌ One or more parameters failed' : overall === 'warning' ? '⚠️ Warning — near limit' : '🔵 Partial / Pending'}</p></div>
+        <div class="remarks-item" style="grid-column:span 2;"><label>Additional Notes</label><p>${record.remarks || 'No additional remarks.'}</p></div>
+      </div>
+    </div>
+
+    <!-- Signature & Approval -->
+    <div class="sig-section">
+      <div class="sig-box">
+        <div class="sig-line">Sign here</div>
+        <label>Tested By</label>
+        <p>${record.testedBy || '___________________'}</p>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line">Sign here</div>
+        <label>Reviewed By</label>
+        <p>___________________</p>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:14px;">
+        <div class="sig-box" style="flex:1;">
+          <div class="sig-line">Sign here</div>
+          <label>Authorized Signatory</label>
+          <p>___________________</p>
+        </div>
+        <div class="stamp-area">OFFICIAL<br/>STAMP</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="page-footer">
+    <div class="left">
+      AQURO Water Pvt. Ltd. &nbsp;|&nbsp; Report No.: ${reportNo} &nbsp;|&nbsp; Rev.: ${revNo} &nbsp;|&nbsp; Page 1 of 1
+    </div>
+    <div class="right">
+      This is a system-generated internal quality report. &nbsp;|&nbsp; Confidential — Not for public distribution.
+    </div>
+  </div>
+
 </body>
 </html>`;
 
-    const win = window.open('', '_blank', 'width=900,height=700');
+    const win = window.open('', '_blank', 'width=1050,height=800');
     if (!win) { alert('Popup blocked! Please allow popups for this site.'); return; }
     win.document.write(html);
     win.document.close();
     win.focus();
-    setTimeout(() => { win.print(); }, 600);
+    setTimeout(() => { win.print(); }, 700);
   };
+
 
 
   const filtered = filterStatus === 'all'
