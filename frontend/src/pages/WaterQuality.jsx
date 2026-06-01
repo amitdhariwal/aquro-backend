@@ -310,7 +310,7 @@ export default function WaterQuality() {
       <div class="info-item"><label>Sample ID</label><p>${record.sampleId}</p></div>
       <div class="info-item"><label>Batch No.</label><p>${record.batchNumber || '—'}</p></div>
       <div class="info-item"><label>Sampling Date</label><p>${samplingDate}</p></div>
-      <div class="info-item"><label>Report Date</label><p>${genDate}</p></div>
+      <div class="info-item"><label>Report Date</label><p>${samplingDate}</p></div>
       <div class="info-item"><label>Sample Source</label><p>${record.source || '—'}</p></div>
       <div class="info-item"><label>Tested By</label><p>${testedBy}</p></div>
       <div class="info-item"><label>Params Tested</label><p>${testedCount} / ${PARAMETERS.length}</p></div>
