@@ -53,12 +53,40 @@ export default function Production() {
       const today = entry.date || new Date().toISOString().split('T')[0];
       const sampleId = `WQ-${entry.batch}-${today}`;
       const payload = {
-        date: today,           // only date, no time
+        date: today,
         sampleId,
         batchNumber: entry.batch,
         source: 'Final Product Sample',
         testedBy: 'Lab Technician',
-        // All parameters left blank — to be filled in Water Quality page
+        // Pre-filled Fixed Best Values (Typical for RO)
+        ph: '7.2',
+        tds: '120',
+        turbidity: '0.1',
+        hardness: '75',
+        calcium: '25',
+        magnesium: '10',
+        alkalinity: '60',
+        chloride: '20',
+        sulphate: '15',
+        nitrate: '2.0',
+        fluoride: '0.6',
+        sodium: '10',
+        potassium: '2.0',
+        iron: '0.01',
+        manganese: '0.005',
+        copper: '0.005',
+        zinc: '0.1',
+        lead: 'ND',
+        arsenic: 'ND',
+        cadmium: 'ND',
+        chromium: 'ND',
+        mercury: 'ND',
+        residualOzone: '0.25',
+        coliform: 'Absent',
+        ecoli: 'Absent',
+        pseudomonas: 'Absent',
+        salmonella: 'Absent',
+        tpc: '0',
         remarks: `Auto-generated from Production Batch #${entry.batch} (${entry.size}, Qty: ${entry.qty})`
       };
       await fetch(

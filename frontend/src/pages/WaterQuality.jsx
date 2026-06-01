@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Activity,
   Download,
+  Edit2,
 } from 'lucide-react';
 
 
@@ -132,8 +133,12 @@ export default function WaterQuality() {
       return;
     }
     try {
-      const res = await fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + '/api/water-quality', {
-        method: 'POST',
+      const url = form.id 
+        ? `${import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com'}/api/water-quality/${form.id}`
+        : `${import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com'}/api/water-quality`;
+        
+      const res = await fetch(url, {
+        method: form.id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       });
@@ -188,24 +193,40 @@ export default function WaterQuality() {
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; color:#1e293b; background:#fff; padding:32px; }
-    .header { text-align:center; margin-bottom:24px; }
-    .header h1 { font-size:26px; color:#0ea5e9; font-weight:800; letter-spacing:1px; }
-    .header p { font-size:12px; color:#64748b; margin-top:4px; }
-    .divider { height:3px; background:linear-gradient(to right,#0ea5e9,#38bdf8); border-radius:2px; margin:18px 0; }
-    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 32px; margin-bottom:20px; }
+    .header { text-align:center; margin-bottom:20px; }
+    .header h1 { font-size:24px; color:#0ea5e9; font-weight:800; letter-spacing:1px; }
+    .header p { font-size:11px; color:#64748b; margin-top:4px; }
+    .divider { height:2px; background:linear-gradient(to right,#0ea5e9,#38bdf8); border-radius:2px; margin:12px 0; }
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 32px; margin-bottom:16px; }
     .info-item label { font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; }
-    .info-item p { font-size:13px; font-weight:600; color:#1e293b; margin-top:2px; }
-    .badge { display:inline-block; padding:3px 12px; border-radius:999px; font-size:12px; font-weight:700; color:#fff; }
-    .section-title { font-size:11px; font-weight:700; color:#0ea5e9; text-transform:uppercase; letter-spacing:.5px; margin:14px 0 6px; }
-    table { width:100%; border-collapse:collapse; margin-top:4px; font-size:12px; }
+    .info-item p { font-size:12px; font-weight:600; color:#1e293b; margin-top:2px; }
+    .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:700; color:#fff; }
+    .section-title { font-size:11px; font-weight:700; color:#0ea5e9; text-transform:uppercase; letter-spacing:.5px; margin:12px 0 4px; }
+    table { width:100%; border-collapse:collapse; margin-top:4px; font-size:11px; }
     thead tr { background:#0ea5e9; color:#fff; }
-    thead th { padding:9px 12px; text-align:left; font-weight:700; }
+    thead th { padding:6px 10px; text-align:left; font-weight:700; }
     tbody tr:nth-child(even) { background:#f8fafc; }
-    tbody td { padding:8px 12px; border-bottom:1px solid #e2e8f0; }
-    .remarks { margin-top:20px; padding:12px 16px; background:#f1f5f9; border-left:4px solid #0ea5e9; border-radius:6px; font-size:12px; color:#475569; }
+    tbody td { padding:5px 10px; border-bottom:1px solid #e2e8f0; }
+    .remarks { margin-top:16px; padding:10px 14px; background:#f1f5f9; border-left:4px solid #0ea5e9; border-radius:6px; font-size:11px; color:#475569; }
     .remarks strong { color:#1e293b; display:block; margin-bottom:4px; }
-    .footer { margin-top:32px; text-align:center; font-size:10px; color:#94a3b8; border-top:1px solid #e2e8f0; padding-top:12px; }
-    @media print { body { padding:16px; } }
+    .footer { margin-top:24px; text-align:center; font-size:10px; color:#94a3b8; border-top:1px solid #e2e8f0; padding-top:10px; }
+    
+    @page { size: A4; margin: 10mm; }
+    @media print { 
+      body { padding: 0 !important; }
+      .header { margin-bottom: 10px; }
+      .header h1 { font-size: 18px; }
+      .divider { margin: 8px 0; height: 2px; }
+      .info-grid { margin-bottom: 8px; gap: 4px 16px; }
+      .info-item label { font-size: 9px; }
+      .info-item p { font-size: 11px; }
+      table { font-size: 10px; }
+      thead th { padding: 4px 8px; }
+      tbody td { padding: 3.5px 8px; }
+      .section-title { font-size: 10px; margin: 8px 0 4px; }
+      .remarks { margin-top: 10px; padding: 6px 10px; font-size: 10px; }
+      .footer { margin-top: 12px; padding-top: 6px; font-size: 9px; }
+    }
   </style>
 </head>
 <body>
@@ -381,6 +402,13 @@ export default function WaterQuality() {
                       title="Download PDF"
                     >
                       <Download className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setForm(record); setShowModal(true); }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                      title="Edit Record"
+                    >
+                      <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDelete(record.id); }}
