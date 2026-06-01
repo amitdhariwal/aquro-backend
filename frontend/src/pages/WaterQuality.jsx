@@ -101,6 +101,7 @@ export default function WaterQuality() {
   const [form, setForm] = useState(emptyForm());
   const [expandedId, setExpandedId] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const fetchRecords = async () => {
     try {
@@ -173,7 +174,23 @@ export default function WaterQuality() {
     }
   };
 
-  const handleDownloadPDF = (record) => {
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (window.confirm(`Kya aap sach mein in ${selectedIds.length} records ko delete karna chahte hain?`)) {
+      try {
+        await Promise.all(selectedIds.map(id => 
+          fetch((import.meta.env.VITE_API_URL || 'https://aquro-backend-api.onrender.com') + `/api/water-quality/${id}`, { method: 'DELETE' })
+        ));
+        setSelectedIds([]);
+        fetchRecords();
+      } catch (error) {
+        console.error(error);
+        alert('Kuch records delete nahi ho paye.');
+      }
+    }
+  };
+
+  const generateReportHTML = (record) => {
     const overall = getOverallStatus(record);
     const overallCfg = STATUS_CONFIG[overall] || STATUS_CONFIG['pending'];
     const statusColors = { pass: '#059669', fail: '#dc2626', warning: '#d97706', pending: '#64748b', unknown: '#94a3b8' };
@@ -382,13 +399,48 @@ export default function WaterQuality() {
 
 </body>
 </html>`;
+    return html;
+  };
 
+  const handleDownloadPDF = (record) => {
+    const html = generateReportHTML(record);
     const win = window.open('', '_blank', 'width=1000,height=780');
     if (!win) { alert('Popup blocked! Please allow popups for this site.'); return; }
     win.document.write(html);
     win.document.close();
     win.focus();
     setTimeout(() => { win.print(); }, 700);
+  };
+
+  const handleBulkDownloadPDF = () => {
+    if (selectedIds.length === 0) return;
+    const selectedRecords = records.filter(r => selectedIds.includes(r.id));
+    const htmls = selectedRecords.map(r => generateReportHTML(r));
+    const fullHtml = htmls.join('<div style="page-break-after: always;"></div>');
+    
+    const win = window.open('', '_blank', 'width=1000,height=780');
+    if (!win) { alert('Popup blocked! Please allow popups for this site.'); return; }
+    win.document.write(fullHtml);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 700 + (selectedRecords.length * 50));
+  };
+
+  const handleToggleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(filtered.map(r => r.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleToggleSelect = (e, id) => {
+    e.stopPropagation();
+    if (e.target.checked) {
+      setSelectedIds(prev => [...prev, id]);
+    } else {
+      setSelectedIds(prev => prev.filter(x => x !== id));
+    }
   };
 
 
@@ -448,27 +500,59 @@ export default function WaterQuality() {
         ))}
       </div>
 
-      {/* ── Filter Bar ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {['all', 'pass', 'warning', 'fail'].map((f) => {
-          const labels = { all: 'All Tests', pass: 'Passed', warning: 'Warning', fail: 'Failed' };
-          const colors = {
-            all: 'bg-slate-800 text-white',
-            pass: 'bg-emerald-500 text-white',
-            warning: 'bg-amber-500 text-white',
-            fail: 'bg-red-500 text-white',
-          };
-          return (
-            <button
-              key={f}
-              onClick={() => setFilterStatus(f)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${filterStatus === f ? colors[f] + ' shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
-            >
-              {labels[f]}
-            </button>
-          );
-        })}
-        <span className="ml-auto text-sm text-slate-400">{filtered.length} record(s)</span>
+      {/* ── Filter Bar & Bulk Actions ── */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-2 flex-wrap">
+          {['all', 'pass', 'warning', 'fail'].map((f) => {
+            const labels = { all: 'All Tests', pass: 'Passed', warning: 'Warning', fail: 'Failed' };
+            const colors = {
+              all: 'bg-slate-800 text-white',
+              pass: 'bg-emerald-500 text-white',
+              warning: 'bg-amber-500 text-white',
+              fail: 'bg-red-500 text-white',
+            };
+            return (
+              <button
+                key={f}
+                onClick={() => setFilterStatus(f)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${filterStatus === f ? colors[f] + ' shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+              >
+                {labels[f]}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0 sm:pl-4 w-full sm:w-auto">
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700 select-none">
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded text-aquro-600 focus:ring-aquro-500 cursor-pointer"
+              checked={filtered.length > 0 && selectedIds.length === filtered.length}
+              onChange={handleToggleSelectAll}
+            />
+            Select All
+          </label>
+
+          {selectedIds.length > 0 && (
+            <div className="flex items-center gap-2 ml-auto sm:ml-0">
+              <button
+                onClick={handleBulkDownloadPDF}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-aquro-50 text-aquro-600 hover:bg-aquro-100 hover:text-aquro-700 rounded-lg text-sm font-semibold transition-colors border border-aquro-100"
+              >
+                <Download className="w-4 h-4" />
+                Print ({selectedIds.length})
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg text-sm font-semibold transition-colors border border-red-100"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete ({selectedIds.length})
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Records List ── */}
@@ -495,6 +579,14 @@ export default function WaterQuality() {
                   className="flex items-center gap-4 p-4 cursor-pointer hover:bg-slate-50/50 transition-colors"
                   onClick={() => setExpandedId(isExpanded ? null : record.id)}
                 >
+                  <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded text-aquro-600 focus:ring-aquro-500 cursor-pointer"
+                      checked={selectedIds.includes(record.id)}
+                      onChange={(e) => handleToggleSelect(e, record.id)}
+                    />
+                  </div>
                   <div className={`w-10 h-10 rounded-xl ${cfg.bg} flex items-center justify-center flex-shrink-0`}>
                     <StatusIcon className={`w-5 h-5 ${cfg.color}`} />
                   </div>
