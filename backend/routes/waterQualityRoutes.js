@@ -21,6 +21,22 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  try {
+    const updatedRecord = await WaterQuality.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!updatedRecord) {
+      return res.status(404).json({ message: 'Record not found' });
+    }
+    res.json(updatedRecord);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 router.delete('/:id', async (req, res) => {
   try {
     await WaterQuality.findByIdAndDelete(req.params.id);
