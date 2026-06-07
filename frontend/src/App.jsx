@@ -14,6 +14,7 @@ import ReadyStock from './pages/ReadyStock';
 import Employees from './pages/Employees';
 import Suppliers from './pages/Suppliers';
 import Login from './pages/Login';
+import CustomerContact from './pages/CustomerContact';
 
 // Intercept fetch to prevent viewers from modifying data
 const originalFetch = window.fetch;
@@ -83,6 +84,7 @@ function App() {
                 <Route path="/employees" element={<Employees />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/quality" element={<WaterQuality />} />
+                <Route path="/customer-contact" element={<CustomerContact />} />
                 <Route path="/readystock" element={<ReadyStock />} />
                 <Route path="/suppliers" element={<Suppliers />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />

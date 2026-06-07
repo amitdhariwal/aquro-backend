@@ -13,7 +13,8 @@ import {
   LogOut,
   X,
   Layers,
-  Briefcase
+  Briefcase,
+  Phone
 } from 'lucide-react';
 
 const navigation = [
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Employees', to: '/employees', icon: Users },
   { name: 'Reports', to: '/reports', icon: BarChart3 },
   { name: 'Water Quality', to: '/quality', icon: TestTube },
+  { name: 'Customer Contact', to: '/customer-contact', icon: Phone },
 ];
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen, setIsAuthenticated }) {
