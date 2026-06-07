@@ -43,7 +43,9 @@ function getParamStatus(key, value) {
   if (!p || value === '' || value === null || value === undefined) return 'unknown';
   
   const strVal = String(value).trim().toLowerCase();
-  if (strVal === 'nt' || strVal === 'n/a') return 'unknown';
+  if (strVal === 'nt' || strVal === 'n/a' || strVal === 'not tested') return 'unknown';
+
+  if (strVal === 'clear (visual)' || strVal === 'clear') return 'pass';
 
   // Microbiological: Absent = pass, anything else = fail
   if (p.isMicro) {
@@ -242,7 +244,8 @@ export default function WaterQuality() {
         statusLabel = 'NT';
         statusColor = '#94a3b8';
       } else {
-        displayVal = `${strVal}${p.unit ? ' ' + p.unit : ''}`;
+        const isNum = !isNaN(parseFloat(rawVal));
+        displayVal = `${strVal}${p.unit && isNum ? ' ' + p.unit : ''}`;
         const s = getParamStatus(p.key, rawVal);
         statusLabel = s === 'pass' ? 'PASS' : s === 'fail' ? 'FAIL' : s === 'warning' ? 'WARN' : 'NT';
         statusColor = statusColors[s] || '#94a3b8';
@@ -261,7 +264,7 @@ export default function WaterQuality() {
 
     const testedCount = PARAMETERS.filter(p => {
       const v = String(record[p.key] || '').trim().toLowerCase();
-      return v !== '' && v !== 'nt' && v !== 'n/a';
+      return v !== '' && v !== 'nt' && v !== 'n/a' && v !== 'not tested';
     }).length;
 
     const html = `<!DOCTYPE html>
