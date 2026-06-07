@@ -272,11 +272,11 @@ export default function WaterQuality() {
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: Arial, sans-serif; color:#1e293b; background:#fff; font-size:10.5px; }
-    .page-header { background:linear-gradient(135deg,#0369a1,#0ea5e9); color:#fff; padding:11px 18px; display:flex; align-items:center; justify-content:space-between; }
-    .company-info h1 { font-size:18px; font-weight:800; letter-spacing:1px; }
-    .company-info p { font-size:9px; opacity:.88; margin-top:1px; line-height:1.5; }
-    .report-meta { text-align:right; font-size:9px; opacity:1; font-weight:700; line-height:1.7; }
-    .report-meta strong { font-size:11px; display:block; margin-bottom:1px; }
+    .page-header { background:#fff; color:#0f172a; padding:15px 18px; display:flex; align-items:center; justify-content:space-between; border-bottom: 3px solid #0f172a; }
+    .company-info h1 { font-size:26px; font-weight:900; letter-spacing:1px; margin-bottom:4px; font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; }
+    .company-info p { font-size:10px; color:#475569; margin-top:2px; line-height:1.5; font-weight:600; }
+    .report-meta { text-align:right; font-size:10px; color:#0f172a; font-weight:700; line-height:1.7; }
+    .report-meta strong { font-size:13px; display:block; margin-bottom:3px; letter-spacing:0.5px; }
     .title-bar { background:#f0f9ff; border-bottom:2px solid #0ea5e9; padding:5px 18px; display:flex; align-items:center; justify-content:space-between; }
     .title-bar h2 { font-size:11.5px; font-weight:700; color:#0369a1; }
     .ref-std { font-size:8.5px; color:#64748b; }
@@ -321,7 +321,7 @@ export default function WaterQuality() {
 
   <div class="page-header">
     <div class="company-info">
-      <h1>💧 M/S AQURO WATER</h1>
+      <h1>M/S AQUR<span style="position:relative;display:inline-block;line-height:1;">O<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:0.4em;color:#0ea5e9;">💧</span></span> WATER</h1>
       <p>Jagua Khurd, Post Rajabpur, Amroha (U.P.) – 244236</p>
       <p>Mobile: 8449692599 &nbsp;|&nbsp; Premium Packaged Drinking Water</p>
     </div>
@@ -346,7 +346,7 @@ export default function WaterQuality() {
       <div class="info-item"><label>Sampling Date</label><p>${samplingDate}</p></div>
       <div class="info-item"><label>Report Date</label><p>${samplingDate}</p></div>
       <div class="info-item"><label>Sample Source</label><p>${record.source || '—'}</p></div>
-      <div class="info-item"><label>Tested By</label><p>${testedBy}</p></div>
+      <div class="info-item"><label>Tested By</label><p>___________________</p></div>
       <div class="info-item"><label>Params Tested</label><p>${testedCount} / ${PARAMETERS.length}</p></div>
       <div class="info-item"><label>Overall Result</label>
         <p><span class="badge" style="background:${statusColors[overall]};">${overallCfg.label}</span></p>
@@ -390,7 +390,7 @@ export default function WaterQuality() {
       <div class="sig-box">
         <div class="sig-line"></div>
         <label>Tested By</label>
-        <p>${testedBy}</p>
+        <p></p>
       </div>
       <div class="sig-box">
         <div class="sig-line"></div>
