@@ -81,7 +81,7 @@ const STATUS_CONFIG = {
 const HARDCODED_DEFAULTS = {
   ph: '7.8',
   tds: '71',
-  turbidity: '0.1',
+  turbidity: 'Clear (Visual)',
   hardness: '39.5',
   calcium: '10.8',
   magnesium: '3.1',
@@ -218,18 +218,18 @@ export default function WaterQuality() {
     const testedBy = record.testedBy || 'Amit Kumar';
 
     const TEST_METHODS = {
-      ph: 'IS 3025 (Part 11)',
-      tds: 'IS 3025 (Part 16)',
-      turbidity: 'IS 3025 (Part 10)',
-      hardness: 'IS 3025 (Part 21)',
-      calcium: 'IS 3025 (Part 40)',
-      magnesium: 'IS 3025 (Part 46)',
-      alkalinity: 'IS 3025 (Part 23)',
-      chloride: 'IS 3025 (Part 32)',
-      sulphate: 'IS 3025 (Part 24)',
-      nitrate: 'IS 3025 (Part 34)',
-      fluoride: 'IS 3025 (Part 60)',
-      iron: 'IS 3025 (Part 53)',
+      ph: 'Digital pH Meter',
+      tds: 'Digital TDS Meter',
+      turbidity: 'Visual Inspection',
+      hardness: 'BIONIX Reagent Kit (Titration Method)',
+      calcium: 'BIONIX Reagent Kit (Colorimetric Method)',
+      magnesium: 'BIONIX Reagent Kit (Colorimetric Method)',
+      alkalinity: 'BIONIX Reagent Kit (Titration Method)',
+      chloride: 'BIONIX Reagent Kit (Titration Method)',
+      sulphate: 'BIONIX Reagent Kit (Colorimetric Method)',
+      nitrate: 'BIONIX Reagent Kit (Colorimetric Method)',
+      fluoride: 'BIONIX Reagent Kit (Colorimetric Method)',
+      iron: 'BIONIX Reagent Kit (Colorimetric Method)',
     };
 
     const tableRows = PARAMETERS.map(p => {

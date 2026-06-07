@@ -60,7 +60,7 @@ export default function Production() {
         testedBy: 'Amit Kumar',
         ph: '7.8',
         tds: '71',
-        turbidity: '0.1',
+        turbidity: 'Clear (Visual)',
         hardness: '39.5',
         calcium: '10.8',
         magnesium: '3.1',
