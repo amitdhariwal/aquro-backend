@@ -78,6 +78,21 @@ const STATUS_CONFIG = {
   unknown: { label: '—', color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-100', icon: ClipboardList },
 };
 
+const HARDCODED_DEFAULTS = {
+  ph: '7.8',
+  tds: '71',
+  turbidity: '0.1',
+  hardness: '39.5',
+  calcium: '10.8',
+  magnesium: '3.1',
+  alkalinity: '31.6',
+  chloride: '18.2',
+  sulphate: '8.4',
+  nitrate: '0',
+  fluoride: '0.1',
+  iron: '0.1',
+};
+
 const emptyForm = () => {
   let defaults = {};
   try {
@@ -88,8 +103,8 @@ const emptyForm = () => {
     sampleId: '',
     batchNumber: '',
     source: 'RO Plant Output',
-    testedBy: '',
-    ...Object.fromEntries(PARAMETERS.map((p) => [p.key, defaults[p.key] || ''])),
+    testedBy: 'Amit Kumar',
+    ...Object.fromEntries(PARAMETERS.map((p) => [p.key, defaults[p.key] !== undefined ? defaults[p.key] : (HARDCODED_DEFAULTS[p.key] || '')])),
     remarks: '',
   };
 };
