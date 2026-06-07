@@ -794,11 +794,10 @@ export default function WaterQuality() {
                         {param.icon} {param.label}
                       </label>
                       <input
-                        type="number"
+                        type="text"
                         name={param.key}
                         value={form[param.key]}
                         onChange={handleChange}
-                        step="any"
                         placeholder={`Max: ${param.max}${param.unit ? ' ' + param.unit : ''}`}
                         className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-aquro-400 focus:border-transparent"
                       />
