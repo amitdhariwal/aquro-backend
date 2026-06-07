@@ -55,13 +55,14 @@ export default function CustomerContact() {
   const exportToVCF = () => {
     let vcfContent = '';
     filteredCustomers.forEach(c => {
-      vcfContent += 'BEGIN:VCARD\n';
-      vcfContent += 'VERSION:3.0\n';
-      vcfContent += `FN:${c.businessName || 'Customer'} - ${c.ownerName || ''}\n`;
-      if (c.businessName) vcfContent += `ORG:${c.businessName}\n`;
-      if (c.mobile) vcfContent += `TEL;TYPE=CELL:${c.mobile}\n`;
-      if (c.address || c.district) vcfContent += `ADR;TYPE=WORK:;;${c.address || ''};${c.district || ''};${c.state || ''};;\n`;
-      vcfContent += 'END:VCARD\n';
+      const name = `${c.businessName || 'Customer'} - ${c.ownerName || ''}`.trim();
+      vcfContent += 'BEGIN:VCARD\r\n';
+      vcfContent += 'VERSION:3.0\r\n';
+      vcfContent += `N:;${name};;;;\r\n`;
+      vcfContent += `FN:${name}\r\n`;
+      if (c.businessName) vcfContent += `ORG:${c.businessName}\r\n`;
+      if (c.mobile) vcfContent += `TEL;TYPE=CELL:${c.mobile}\r\n`;
+      vcfContent += 'END:VCARD\r\n';
     });
 
     const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8;' });
