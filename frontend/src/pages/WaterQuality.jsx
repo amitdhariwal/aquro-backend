@@ -271,7 +271,8 @@ export default function WaterQuality() {
   <title>Water Quality Report — ${record.sampleId}</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: Arial, sans-serif; color:#1e293b; background:#fff; font-size:10.5px; }
+    body { font-family: Arial, sans-serif; color:#1e293b; background:#fff; font-size:10.5px; position: relative; z-index: 1; }
+    .watermark { position:absolute; top:45%; left:50%; transform:translate(-50%, -50%) rotate(-40deg); font-size:160px; font-weight:900; color:rgba(14, 165, 233, 0.05); z-index:-1; pointer-events:none; white-space:nowrap; letter-spacing:15px; font-family:'Arial Black', Impact, sans-serif; text-transform:uppercase; user-select: none; }
     .page-header { background:#fff; color:#0f172a; padding:15px 18px; display:flex; align-items:center; justify-content:space-between; border-bottom: 3px solid #0f172a; }
     .company-info h1 { font-size:26px; font-weight:900; letter-spacing:1px; margin-bottom:4px; font-family: 'Arial Black', Impact, sans-serif; text-transform: uppercase; }
     .company-info p { font-size:10px; color:#475569; margin-top:2px; line-height:1.5; font-weight:600; }
@@ -318,6 +319,7 @@ export default function WaterQuality() {
   </style>
 </head>
 <body>
+  <div class="watermark">AQURO</div>
 
   <div class="page-header">
     <div class="company-info">
