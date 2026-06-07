@@ -301,7 +301,7 @@ export default function WaterQuality() {
     .remarks-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:3px 16px; }
     .remarks-item label { font-size:7.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; }
     .remarks-item p { font-size:9.5px; color:#1e293b; }
-    .sig-section { margin-top:9px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+    .sig-section { margin-top:9px; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
     .sig-box { border-top:1.5px solid #94a3b8; padding-top:5px; }
     .sig-box .sig-line { height:24px; border:1px dashed #cbd5e1; border-radius:3px; margin-bottom:4px; background:#f8fafc; }
     .sig-box label { font-size:7.5px; font-weight:700; color:#64748b; text-transform:uppercase; display:block; }
@@ -396,11 +396,6 @@ export default function WaterQuality() {
         <div class="sig-line"></div>
         <label>Tested By</label>
         <p></p>
-      </div>
-      <div class="sig-box">
-        <div class="sig-line"></div>
-        <label>Reviewed By</label>
-        <p>___________________</p>
       </div>
       <div style="display:flex;align-items:flex-end;gap:10px;">
         <div class="sig-box" style="flex:1;">
