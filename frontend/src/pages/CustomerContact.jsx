@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Search, MapPin, Download, Store, User } from 'lucide-react';
+import { Phone, Search, MapPin, Download, Store, User, Smartphone } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export default function CustomerContact() {
@@ -52,6 +52,28 @@ export default function CustomerContact() {
     XLSX.writeFile(wb, "Customer_Contacts.xlsx");
   };
 
+  const exportToVCF = () => {
+    let vcfContent = '';
+    filteredCustomers.forEach(c => {
+      vcfContent += 'BEGIN:VCARD\n';
+      vcfContent += 'VERSION:3.0\n';
+      vcfContent += `FN:${c.businessName || 'Customer'} - ${c.ownerName || ''}\n`;
+      if (c.businessName) vcfContent += `ORG:${c.businessName}\n`;
+      if (c.mobile) vcfContent += `TEL;TYPE=CELL:${c.mobile}\n`;
+      if (c.address || c.district) vcfContent += `ADR;TYPE=WORK:;;${c.address || ''};${c.district || ''};${c.state || ''};;\n`;
+      vcfContent += 'END:VCARD\n';
+    });
+
+    const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'Customer_Contacts.vcf');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -92,12 +114,22 @@ export default function CustomerContact() {
           </div>
         </div>
         
-        <button 
-          onClick={exportToExcel} 
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors font-medium text-sm whitespace-nowrap"
-        >
-          <Download className="w-4 h-4" /> Export Contacts
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={exportToExcel} 
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors font-medium text-sm whitespace-nowrap"
+            title="Download Excel File for PC"
+          >
+            <Download className="w-4 h-4" /> Excel
+          </button>
+          <button 
+            onClick={exportToVCF} 
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors font-medium text-sm whitespace-nowrap"
+            title="Download Mobile Contacts (VCF)"
+          >
+            <Smartphone className="w-4 h-4" /> Save to Mobile
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
