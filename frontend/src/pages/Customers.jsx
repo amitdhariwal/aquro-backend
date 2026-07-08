@@ -14,6 +14,7 @@ export default function Customers() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [showPendingOnly, setShowPendingOnly] = useState(false);
+  const [sortByTopBuyers, setSortByTopBuyers] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [formData, setFormData] = useState(getInitialForm());
@@ -382,8 +383,9 @@ export default function Customers() {
     const custPayments = allPayments.filter(p => p.customerId === c.id && p.type === 'PAYMENT' && isDateInRange(p.date));
     const billed = custDispatches.reduce((sum, d) => sum + Number(d.totalAmount || 0), 0);
     const paid = custPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const totalBoxes = custDispatches.reduce((sum, d) => sum + Number(d.boxes || 0), 0);
     const pending = billed - paid;
-    return { ...c, billed, paid, pending };
+    return { ...c, billed, paid, pending, totalBoxes };
   });
 
   const maxPendingAmount = Math.max(...customersWithStats.map(c => c.pending), 0);
@@ -391,7 +393,7 @@ export default function Customers() {
   const totalPending = customersWithStats.reduce((sum, c) => sum + c.pending, 0);
   const totalSale = totalReceived + totalPending;
 
-  const filtered = customersWithStats.filter(c => {
+  let filtered = customersWithStats.filter(c => {
     const matchesSearch = c.businessName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           c.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           c.mobile.includes(searchQuery);
@@ -399,6 +401,10 @@ export default function Customers() {
     const matchesPending = showPendingOnly ? c.pending > 0 : true;
     return matchesSearch && matchesCategory && matchesPending;
   });
+
+  if (sortByTopBuyers) {
+    filtered.sort((a, b) => b.totalBoxes - a.totalBoxes);
+  }
 
   const exportListToPDF = () => {
     const doc = new jsPDF();
@@ -535,6 +541,16 @@ export default function Customers() {
           <span className="text-sm font-medium text-slate-700">Pending Only</span>
         </label>
         
+        <label className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer shadow-sm hover:bg-slate-50 transition-colors whitespace-nowrap">
+          <input 
+            type="checkbox" 
+            className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+            checked={sortByTopBuyers}
+            onChange={(e) => setSortByTopBuyers(e.target.checked)}
+          />
+          <span className="text-sm font-medium text-slate-700">Top Buyers (Boxes)</span>
+        </label>
+        
         <div className="flex items-center gap-2">
           <input 
             type="date" 
@@ -617,6 +633,9 @@ export default function Customers() {
                         <Phone className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> {customer.mobile}
                       </div>
                       <div className="text-xs font-bold mt-1 text-orange-600">Pending: ₹{customer.pending}</div>
+                      {customer.totalBoxes > 0 && (
+                        <div className="text-xs font-bold mt-1 text-blue-600">Total Boxes Bought: {customer.totalBoxes}</div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-start text-sm text-slate-600 max-w-xs">
